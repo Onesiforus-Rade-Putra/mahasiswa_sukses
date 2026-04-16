@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mahasiswa_sukses/views/widgets/custom_bottom_navbar.dart';
 import 'package:mahasiswa_sukses/views/widgets/header_background.dart';
+import 'package:mahasiswa_sukses/views/target/target_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -226,6 +227,15 @@ class HomePage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _goToTargetPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TargetPage(),
       ),
     );
   }
@@ -584,9 +594,12 @@ class HomePage extends StatelessWidget {
                           icon: Icons.emoji_events_outlined,
                           title: "Achievement",
                         ),
-                        featureCard(
-                          icon: Icons.track_changes,
-                          title: "Target\n& Tugas",
+                        GestureDetector(
+                          onTap: () => _goToTargetPage(context),
+                          child: featureCard(
+                            icon: Icons.track_changes,
+                            title: "Target\n& Tugas",
+                          ),
                         ),
                         featureCard(
                           icon: Icons.forum_outlined,
