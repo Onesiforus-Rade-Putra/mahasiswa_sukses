@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class CustomBottomNavbar extends StatelessWidget {
@@ -28,77 +29,96 @@ class CustomBottomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const Color navColor = Color(0xFFED1E28);
+
     return SafeArea(
       top: false,
       child: SizedBox(
-        height: 108,
+        height: 122,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            const double sideMargin = 0;
-            const double circleSize = 74;
-            const double circleStroke = 5;
-            const double barHeight = 100;
+            const double circleSize = 60;
+            const double bodyHeight = 100;
 
-            final double navWidth = constraints.maxWidth - (sideMargin * 2);
-            final double itemWidth = navWidth / 5;
-            final double circleLeft = sideMargin +
-                (itemWidth * currentIndex) +
-                (itemWidth / 2) -
-                (circleSize / 2);
+            final double width = constraints.maxWidth;
+            final double itemWidth = width / 5;
+
+            const List<double> itemOffsets = [10, 5, 0, -5, -10];
+
+            final double centerX = (itemWidth * currentIndex) +
+                (itemWidth / 2) +
+                itemOffsets[currentIndex];
+
+            final double circleLeft = centerX - (circleSize / 2);
 
             return Stack(
               clipBehavior: Clip.none,
               children: [
                 Positioned(
-                  left: sideMargin,
-                  right: sideMargin,
+                  left: 0,
+                  right: 0,
                   bottom: 0,
-                  child: SizedBox(
-                    height: barHeight,
-                    child: CustomPaint(
-                      painter: _NavbarPainter(
-                        activeCenterX:
-                            (itemWidth * currentIndex) + (itemWidth / 2),
-                      ),
+                  child: CustomPaint(
+                    size: Size(width, bodyHeight),
+                    painter: _NavbarPainter(
+                      activeCenterX: centerX,
+                      color: navColor,
+                    ),
+                    child: SizedBox(
+                      height: bodyHeight,
                       child: Row(
                         children: List.generate(5, (index) {
                           final bool isActive = index == currentIndex;
-                          return Expanded(
-                            child: InkWell(
-                              onTap: () => onTap?.call(index),
-                              borderRadius: BorderRadius.circular(20),
-                              child: Padding(
-                                padding: EdgeInsets.only(
-                                  top: isActive ? 40 : 18,
-                                  bottom: 10,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (!isActive)
-                                      Icon(
-                                        _icons[index],
-                                        color: Colors.white,
-                                        size: 23,
-                                      )
-                                    else
-                                      const SizedBox(height: 30),
-                                    const SizedBox(height: 4),
-                                    FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        _labels[index],
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10.5,
-                                          fontWeight: isActive
-                                              ? FontWeight.w700
-                                              : FontWeight.w500,
-                                        ),
+
+                          return SizedBox(
+                            width: itemWidth,
+                            child: Transform.translate(
+                              offset: Offset(itemOffsets[index], 0),
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 2,
+                                  ),
+                                  child: InkWell(
+                                    onTap: () => onTap?.call(index),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 31,
+                                        bottom: 19,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (!isActive)
+                                            Icon(
+                                              _icons[index],
+                                              color: Colors.white,
+                                              size: 26,
+                                            )
+                                          else
+                                            const SizedBox(height: 30),
+                                          const SizedBox(height: 3),
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              _labels[index],
+                                              maxLines: 1,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: isActive
+                                                    ? FontWeight.w700
+                                                    : FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -112,24 +132,27 @@ class CustomBottomNavbar extends StatelessWidget {
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeInOut,
                   left: circleLeft,
-                  top: 2,
+                  top: 18,
                   child: GestureDetector(
                     onTap: () => onTap?.call(currentIndex),
                     child: Container(
                       width: circleSize,
                       height: circleSize,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF1E1E),
+                        color: navColor,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: circleStroke,
-                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.12),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Icon(
                         _icons[currentIndex],
                         color: Colors.white,
-                        size: 34,
+                        size: 38,
                       ),
                     ),
                   ),
@@ -145,44 +168,42 @@ class CustomBottomNavbar extends StatelessWidget {
 
 class _NavbarPainter extends CustomPainter {
   final double activeCenterX;
+  final Color color;
 
   _NavbarPainter({
     required this.activeCenterX,
+    required this.color,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    const Color red = Color(0xFFFF1E1E);
-    const double radius = 26;
-    const double topY = 26;
-    const double shoulderWidth = 30;
-    const double liftHeight = 16;
+    const double radius = 10;
+    const double topY = 16;
+    const double notchRadius = 43;
+    const double notchDepth = 44;
 
     final paint = Paint()
-      ..color = red
+      ..color = color
       ..style = PaintingStyle.fill;
-
-    final double leftCurveStart = activeCenterX - shoulderWidth;
-    final double rightCurveEnd = activeCenterX + shoulderWidth;
 
     final path = Path()
       ..moveTo(0, topY + radius)
       ..quadraticBezierTo(0, topY, radius, topY)
-      ..lineTo(leftCurveStart, topY)
+      ..lineTo(activeCenterX - notchRadius, topY)
       ..cubicTo(
-        leftCurveStart + 10,
+        activeCenterX - notchRadius + 12,
         topY,
-        activeCenterX - 18,
-        topY - liftHeight,
+        activeCenterX - 28,
+        topY + notchDepth,
         activeCenterX,
-        topY - liftHeight,
+        topY + notchDepth,
       )
       ..cubicTo(
-        activeCenterX + 18,
-        topY - liftHeight,
-        rightCurveEnd - 10,
+        activeCenterX + 28,
+        topY + notchDepth,
+        activeCenterX + notchRadius - 12,
         topY,
-        rightCurveEnd,
+        activeCenterX + notchRadius,
         topY,
       )
       ..lineTo(size.width - radius, topY)
@@ -196,6 +217,7 @@ class _NavbarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _NavbarPainter oldDelegate) {
-    return oldDelegate.activeCenterX != activeCenterX;
+    return oldDelegate.activeCenterX != activeCenterX ||
+        oldDelegate.color != color;
   }
 }

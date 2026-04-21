@@ -3,8 +3,24 @@ import 'package:mahasiswa_sukses/views/widgets/custom_bottom_navbar.dart';
 import 'package:mahasiswa_sukses/views/widgets/header_background.dart';
 import 'package:mahasiswa_sukses/views/target/target_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _currentIndex = 0;
+
+  void _goToTargetPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TargetPage(),
+      ),
+    );
+  }
 
   Widget statCard({
     required IconData icon,
@@ -231,18 +247,10 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void _goToTargetPage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TargetPage(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: false,
       backgroundColor: const Color(0xFFF4F4F4),
       body: SafeArea(
         bottom: false,
@@ -358,7 +366,6 @@ class HomePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Quest harian
                     Transform.translate(
                       offset: const Offset(0, -40),
                       child: Container(
@@ -648,9 +655,7 @@ class HomePage extends StatelessWidget {
                       statusColor: const Color(0xFFFF9F1A),
                       statusBg: const Color(0xFFFFF1D9),
                     ),
-
                     const SizedBox(height: 10),
-
                     const Text(
                       "Aktivitas Terbaru",
                       style: TextStyle(
@@ -683,9 +688,11 @@ class HomePage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: CustomBottomNavbar(
-        currentIndex: 0,
+        currentIndex: _currentIndex,
         onTap: (index) {
-          // nanti di isi navigasi
+          setState(() {
+            _currentIndex = index;
+          });
         },
       ),
     );
