@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mahasiswa_sukses/viewmodels/target_viewmodel.dart';
 import 'package:mahasiswa_sukses/views/widgets/add_task_popup.dart';
 import 'package:mahasiswa_sukses/views/widgets/header_background.dart';
+import 'package:mahasiswa_sukses/models/task_model.dart';
 
 class TargetPage extends StatefulWidget {
   const TargetPage({super.key});
@@ -11,14 +12,50 @@ class TargetPage extends StatefulWidget {
 
 class _TargetPageState extends State<TargetPage> {
   final TargetViewModel viewModel = TargetViewModel();
+  @override
+  void initState() {
+    super.initState();
+    viewModel.addListener(_onViewModelChanged);
+    viewModel.loadTasks();
+  }
 
-  void _showAddTaskPopup(BuildContext context) {
-    showModalBottomSheet(
+  @override
+  void dispose() {
+    viewModel.removeListener(_onViewModelChanged);
+    super.dispose();
+  }
+
+  void _onViewModelChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _showAddTaskPopup(BuildContext context) async {
+    final result = await showModalBottomSheet<TaskModel>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const AddTaskPopup(),
     );
+
+    if (result != null) {
+      try {
+        await viewModel.addTask(result);
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Target berhasil ditambahkan')),
+        );
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(viewModel.errorMessage ?? 'Gagal menambah target'),
+          ),
+        );
+      }
+    }
   }
 
   // ✅ helper ada di dalam class
@@ -57,156 +94,183 @@ class _TargetPageState extends State<TargetPage> {
         backgroundColor: const Color(0xFFFF2D2D),
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: Stack(
-        children: [
-          const HeaderBackground(),
-          SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white70),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Target dan Tugas',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.22),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: viewModel.refresh,
+        child: Stack(
+          children: [
+            const HeaderBackground(),
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            const Text(
-                              'Progress Tugas',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.white70),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${viewModel.completedTasks} dari ${viewModel.totalTasks}',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                Text(
-                                  '${viewModel.progressPercent}%',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: LinearProgressIndicator(
-                                value: 0.2,
-                                minHeight: 8,
-                                backgroundColor: Colors.white30,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(context),
+                                icon: const Icon(
+                                  Icons.arrow_back_ios_new,
+                                  size: 16,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(width: 10),
                             const Text(
-                              '"Konsistensi adalah kunci keberhasilan akademikmu!"',
+                              'Target dan Tugas',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(24),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Daftar Tugas',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(height: 18),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.22),
+                            borderRadius: BorderRadius.circular(18),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: viewModel.tasks.length,
-                            itemBuilder: (context, index) {
-                              final task = viewModel.tasks[index];
-
-                              return _taskCard(
-                                index: index,
-                                title: task.title,
-                                subtitle: task.description,
-                                badgeText: task.priority,
-                                badgeColor: _getPriorityColor(task.priority),
-                                category: task.category,
-                                categoryColor: _getCategoryColor(task.category),
-                                date: task.date,
-                                isCompleted: task.isCompleted,
-                              );
-                            },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Progress Tugas',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${viewModel.completedTasks} dari ${viewModel.totalTasks}',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  Text(
+                                    '${viewModel.progressPercent}%',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: LinearProgressIndicator(
+                                  value: viewModel.progress,
+                                  minHeight: 8,
+                                  backgroundColor: Colors.white30,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                '"Konsistensi adalah kunci keberhasilan akademikmu!"',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                      ),
+                      child: viewModel.isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(),
+                            )
+                          : viewModel.errorMessage != null &&
+                                  viewModel.tasks.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Text(
+                                      viewModel.errorMessage!,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Daftar Tugas',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Expanded(
+                                      child: viewModel.tasks.isEmpty
+                                          ? const Center(
+                                              child: Text('Belum ada target.'),
+                                            )
+                                          : ListView.builder(
+                                              itemCount: viewModel.tasks.length,
+                                              itemBuilder: (context, index) {
+                                                final task =
+                                                    viewModel.tasks[index];
+
+                                                return _taskCard(
+                                                  index: index,
+                                                  title: task.title,
+                                                  subtitle: task.description,
+                                                  badgeText: task.priority,
+                                                  badgeColor: _getPriorityColor(
+                                                      task.priority),
+                                                  category: task.category,
+                                                  categoryColor:
+                                                      _getCategoryColor(
+                                                          task.category),
+                                                  date: task.date,
+                                                  isCompleted: task.isCompleted,
+                                                );
+                                              },
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -243,10 +307,14 @@ class _TargetPageState extends State<TargetPage> {
             scale: 0.9,
             child: Checkbox(
               value: isCompleted,
-              onChanged: (value) {
-                setState(() {
-                  viewModel.toggleTask(index, value ?? false);
-                });
+              onChanged: (value) async {
+                await viewModel.toggleTask(index, value ?? false);
+                if (!mounted) return;
+                if (viewModel.errorMessage != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(viewModel.errorMessage!)),
+                  );
+                }
               },
             ),
           ),
@@ -287,10 +355,15 @@ class _TargetPageState extends State<TargetPage> {
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          viewModel.removeTask(index);
-                        });
+                      onTap: () async {
+                        await viewModel.removeTask(index);
+
+                        if (!mounted) return;
+                        if (viewModel.errorMessage != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(viewModel.errorMessage!)),
+                          );
+                        }
                       },
                       child: const Icon(Icons.delete_outline, size: 16),
                     ),

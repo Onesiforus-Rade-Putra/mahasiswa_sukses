@@ -40,11 +40,13 @@ class LoginViewModel extends ChangeNotifier {
 
         final prefs = await SharedPreferences.getInstance();
 
+        // token harus selalu disimpan untuk session login
+        await prefs.setString('token', accessToken!);
+
+        // remember me cukup untuk email saja
         if (rememberMe) {
-          await prefs.setString('token', accessToken!);
           await prefs.setString('email', email);
         } else {
-          await prefs.remove('token');
           await prefs.remove('email');
         }
 

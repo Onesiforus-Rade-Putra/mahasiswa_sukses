@@ -1,29 +1,41 @@
+import 'package:flutter/material.dart';
 import '../models/task_model.dart';
+import '../services/home_service.dart';
 
-class TargetViewModel {
-  final List<TaskModel> tasks = [
-    TaskModel(
-      title: 'Tugas Besar Kalkulus',
-      description: 'Selesaikan soal bab 4-5 dan buat laporan.',
-      category: 'Akademik',
-      priority: 'Tinggi',
-      date: '12 Feb 2026, 20:04',
-    ),
-    TaskModel(
-      title: 'Rapat Divisi Acara',
-      description: 'Briefing untuk event bulan depan.',
-      category: 'Pribadi',
-      priority: 'Sedang',
-      date: '12 Feb 2026, 20:04',
-    ),
-    TaskModel(
-      title: 'Beli Buku Catatan',
-      description: '',
-      category: 'Organisasi',
-      priority: 'Sedang',
-      date: '12 Feb 2026, 20:04',
-    ),
-  ];
+class TargetViewModel extends ChangeNotifier {
+  final HomeService _homeService = HomeService();
+
+  bool isLoading = false;
+  String? errorMessage;
+  String token = '';
+
+  List<TaskModel> tasks = [];
+
+  Future<void> loadTasks() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final savedToken = await _homeService.getSavedToken();
+
+      if (savedToken == null || savedToken.isEmpty) {
+        throw Exception('Token tidak ditemukan. Silakan login ulang.');
+      }
+
+      token = savedToken;
+      tasks = await _homeService.getTasks(token);
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refresh() async {
+    await loadTasks();
+  }
 
   int get totalTasks => tasks.length;
 
@@ -36,15 +48,55 @@ class TargetViewModel {
 
   int get progressPercent => (progress * 100).toInt();
 
-  void addTask(TaskModel task) {
-    tasks.add(task);
+  List<TaskModel> get activeTasks =>
+      tasks.where((task) => !task.isCompleted).toList();
+
+  Future<void> addTask(TaskModel task) async {
+    try {
+      await _homeService.createTask(
+        token: token,
+        task: task,
+      );
+      await loadTasks();
+    } catch (e) {
+      errorMessage = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      rethrow;
+    }
   }
 
-  void removeTask(int index) {
-    tasks.removeAt(index);
-  }
-
-  void toggleTask(int index, bool value) {
+  Future<void> toggleTask(int index, bool value) async {
+    final oldValue = tasks[index].isCompleted;
     tasks[index].isCompleted = value;
+    notifyListeners();
+
+    try {
+      await _homeService.updateTaskProgress(
+        token: token,
+        taskId: tasks[index].id,
+        isCompleted: value,
+      );
+    } catch (e) {
+      tasks[index].isCompleted = oldValue;
+      errorMessage = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+    }
+  }
+
+  Future<void> removeTask(int index) async {
+    final removedTask = tasks[index];
+    tasks.removeAt(index);
+    notifyListeners();
+
+    try {
+      await _homeService.deleteTask(
+        token: token,
+        taskId: removedTask.id,
+      );
+    } catch (e) {
+      tasks.insert(index, removedTask);
+      errorMessage = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+    }
   }
 }
