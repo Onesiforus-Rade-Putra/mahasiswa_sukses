@@ -7,7 +7,7 @@ class QuestModel {
   final int progressPercentage;
   final bool isCompleted;
 
-  const QuestModel({
+  QuestModel({
     required this.title,
     required this.description,
     required this.frequency,
@@ -23,7 +23,7 @@ class QuestModel {
       description: json['description'] ?? '',
       frequency: json['frequency'] ?? '',
       xpReward: json['xp_reward'] ?? 0,
-      difficulty: json['difficulty'] ?? '',
+      difficulty: json['difficulty'] ?? 'easy',
       progressPercentage: json['progress_percentage'] ?? 0,
       isCompleted: json['is_completed'] ?? false,
     );

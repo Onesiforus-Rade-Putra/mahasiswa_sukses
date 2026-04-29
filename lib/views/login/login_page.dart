@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mahasiswa_sukses/viewmodels/login_viewmodel.dart';
 import 'package:mahasiswa_sukses/views/home/home_page.dart';
+import 'package:mahasiswa_sukses/views/main_page.dart';
 import 'package:mahasiswa_sukses/views/signup/signup_page.dart';
 import 'package:mahasiswa_sukses/views/login/login_background.dart';
+import 'package:mahasiswa_sukses/views/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -77,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(builder: (_) => const MainPage()),
       );
     }
   }
@@ -325,7 +327,7 @@ class _LoginPageState extends State<LoginPage> {
                                             context,
                                             MaterialPageRoute(
                                                 builder: (_) =>
-                                                    const HomePage()),
+                                                    const MainPage()),
                                           );
                                         } else {
                                           ScaffoldMessenger.of(context)

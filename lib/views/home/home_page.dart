@@ -854,14 +854,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
       ),
-      bottomNavigationBar: CustomBottomNavbar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),
     );
   }
 }

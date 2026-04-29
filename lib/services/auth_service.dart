@@ -33,34 +33,34 @@ class AuthService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
-    try {
-      final data = jsonDecode(response.body);
+    final data = _safeDecode(response.body);
 
-      if (data is Map<String, dynamic>) {
-        final detail = data['detail']?.toString().toLowerCase() ?? '';
-        final error = data['error']?.toString() ?? '';
-        final message = data['message']?.toString() ?? '';
-        if (detail.contains('invalid login credentials') ||
-            detail.contains('invalid credentials')) {
-          throw Exception('Email atau password salah');
-        }
-        if (detail.contains('user not found') || detail.contains('not found')) {
-          throw Exception('Akun tidak ditemukan');
-        }
-        if (detail.contains('email not confirmed')) {
-          throw Exception('Email belum dikonfirmasi');
-        }
-        if (message.isNotEmpty) {
-          throw Exception(message);
-        }
-        if (detail.isNotEmpty) {
-          throw Exception(detail);
-        }
-        if (error.isNotEmpty) {
-          throw Exception(error);
-        }
+    if (data is Map<String, dynamic>) {
+      final detail = data['detail']?.toString() ?? '';
+      final error = data['error']?.toString() ?? '';
+      final message = data['message']?.toString() ?? '';
+
+      final allMessage = '$detail $error $message'.toLowerCase();
+
+      if (allMessage.contains('invalid login credentials') ||
+          allMessage.contains('invalid credentials')) {
+        throw Exception('Email atau password salah');
       }
-    } catch (_) {}
+
+      if (allMessage.contains('user not found') ||
+          allMessage.contains('not found')) {
+        throw Exception('Akun tidak ditemukan');
+      }
+
+      if (allMessage.contains('email not confirmed')) {
+        throw Exception('Email belum dikonfirmasi');
+      }
+
+      if (message.isNotEmpty) throw Exception(message);
+      if (detail.isNotEmpty) throw Exception(detail);
+      if (error.isNotEmpty) throw Exception(error);
+    }
+
     throw Exception('Login gagal');
   }
 
@@ -74,21 +74,28 @@ class AuthService {
   }) async {
     final url = Uri.parse('$baseUrl/api/v1/auth/register');
 
+    final body = {
+      "email": email,
+      "password": password,
+      "phone_number": phoneNumber,
+      "nim": nim,
+      "full_name": fullName,
+      "birth_date": birthDate,
+    };
+
+    debugPrint('REGISTER SEND BODY: $body');
+
     final response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: jsonEncode({
-        "email": email,
-        "password": password,
-        "phone_number": phoneNumber,
-        "nim": nim,
-        "full_name": fullName,
-        "birth_date": birthDate,
-      }),
+      body: jsonEncode(body),
     );
+
+    debugPrint('REGISTER STATUS: ${response.statusCode}');
+    debugPrint('REGISTER BODY: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       if (response.body.isEmpty || response.body == 'null') {
@@ -97,31 +104,41 @@ class AuthService {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
-    try {
-      final data = jsonDecode(response.body);
+    final data = _safeDecode(response.body);
 
-      if (data is Map<String, dynamic>) {
-        final detail = data['detail']?.toString() ?? '';
-        final error = data['error']?.toString() ?? '';
+    if (data is Map<String, dynamic>) {
+      final detail = data['detail']?.toString() ?? '';
+      final error = data['error']?.toString() ?? '';
+      final message = data['message']?.toString() ?? '';
 
-        if (detail.contains('User already registered')) {
-          throw Exception('Email sudah terdaftar');
-        }
+      final allMessage = '$detail $error $message'.toLowerCase();
 
-        if (detail.contains('at least 8 characters')) {
-          throw Exception('Password minimal 8 karakter');
-        }
-
-        if (error.isNotEmpty) {
-          throw Exception(error);
-        }
-
-        if (detail.isNotEmpty) {
-          throw Exception(detail);
-        }
+      if (allMessage.contains('already registered') ||
+          allMessage.contains('already exists') ||
+          allMessage.contains('email already')) {
+        throw Exception('Email sudah terdaftar');
       }
-    } catch (_) {}
+
+      if (allMessage.contains('at least 8 characters') ||
+          allMessage.contains('minimal 8')) {
+        throw Exception('Password minimal 8 karakter');
+      }
+
+      if (message.isNotEmpty) throw Exception(message);
+      if (detail.isNotEmpty) throw Exception(detail);
+      if (error.isNotEmpty) throw Exception(error);
+    }
 
     throw Exception('Register gagal');
+  }
+
+  dynamic _safeDecode(String body) {
+    try {
+      if (body.isEmpty || body == 'null') return null;
+      return jsonDecode(body);
+    } catch (e) {
+      debugPrint('JSON DECODE ERROR: $e');
+      return null;
+    }
   }
 }
