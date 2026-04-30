@@ -13,32 +13,47 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (message.isMe) {
-      return _MyMessageBubble(message: message);
+      return _MyChatBubble(message: message);
     }
 
-    return _OtherMessageBubble(message: message);
+    return _OtherChatBubble(message: message);
   }
 }
 
-class _OtherMessageBubble extends StatelessWidget {
+class _OtherChatBubble extends StatelessWidget {
   final ChatMessageModel message;
 
-  const _OtherMessageBubble({
+  const _OtherChatBubble({
     required this.message,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
+    final avatarColor = message.senderInitial == 'SA'
+        ? const Color(0xFF2F80ED)
+        : const Color(0xFFFF1D35);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Avatar(
-            initial: message.senderInitial,
-            color: message.senderInitial == 'SA'
-                ? const Color(0xFF2F80ED)
-                : const Color(0xFFF91D2F),
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: avatarColor,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Text(
+              message.senderInitial,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -50,20 +65,20 @@ class _OtherMessageBubble extends StatelessWidget {
                     Text(
                       message.senderName,
                       style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
                         color: Color(0xFF222222),
                       ),
                     ),
                     if (message.isAdmin) ...[
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 3,
+                          horizontal: 6,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF91D2F),
+                          color: const Color(0xFFFF1D35),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -86,26 +101,26 @@ class _OtherMessageBubble extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 6),
                 Container(
                   constraints: const BoxConstraints(
-                    maxWidth: 235,
+                    maxWidth: 220,
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 12,
+                    horizontal: 14,
+                    vertical: 11,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(14),
-                      bottomLeft: Radius.circular(14),
-                      bottomRight: Radius.circular(14),
+                      topRight: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.20),
-                        blurRadius: 5,
+                        color: Colors.black.withOpacity(0.16),
+                        blurRadius: 6,
                         offset: const Offset(0, 3),
                       ),
                     ],
@@ -113,9 +128,9 @@ class _OtherMessageBubble extends StatelessWidget {
                   child: Text(
                     message.message,
                     style: const TextStyle(
-                      fontSize: 13,
-                      height: 1.45,
                       color: Color(0xFF222222),
+                      fontSize: 12,
+                      height: 1.45,
                     ),
                   ),
                 ),
@@ -132,7 +147,7 @@ class _OtherMessageBubble extends StatelessWidget {
                       '${message.likes}',
                       style: const TextStyle(
                         color: Color(0xFF888888),
-                        fontSize: 11,
+                        fontSize: 10,
                       ),
                     ),
                     if (message.replies > 0) ...[
@@ -147,7 +162,7 @@ class _OtherMessageBubble extends StatelessWidget {
                         '${message.replies} balasan',
                         style: const TextStyle(
                           color: Color(0xFF888888),
-                          fontSize: 11,
+                          fontSize: 10,
                         ),
                       ),
                     ],
@@ -162,17 +177,17 @@ class _OtherMessageBubble extends StatelessWidget {
   }
 }
 
-class _MyMessageBubble extends StatelessWidget {
+class _MyChatBubble extends StatelessWidget {
   final ChatMessageModel message;
 
-  const _MyMessageBubble({
+  const _MyChatBubble({
     required this.message,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -192,9 +207,9 @@ class _MyMessageBubble extends StatelessWidget {
                 const Text(
                   'Anda',
                   style: TextStyle(
-                    color: Color(0xFFF91D2F),
+                    color: Color(0xFFFF1D35),
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
@@ -202,62 +217,30 @@ class _MyMessageBubble extends StatelessWidget {
           ),
           Container(
             constraints: const BoxConstraints(
-              maxWidth: 270,
+              maxWidth: 260,
             ),
             padding: const EdgeInsets.symmetric(
-              horizontal: 15,
-              vertical: 12,
+              horizontal: 14,
+              vertical: 11,
             ),
             decoration: const BoxDecoration(
-              color: Color(0xFFF91D2F),
+              color: Color(0xFFFF1D35),
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(14),
-                bottomLeft: Radius.circular(14),
-                bottomRight: Radius.circular(0),
-                topRight: Radius.circular(14),
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
               ),
             ),
             child: Text(
               message.message,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 13,
+                fontSize: 12,
                 height: 1.45,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  final String initial;
-  final Color color;
-
-  const _Avatar({
-    required this.initial,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 38,
-      height: 38,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Text(
-        initial,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w800,
-        ),
       ),
     );
   }

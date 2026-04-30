@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import '../widgets/forum/create_post_dialog.dart';
 import '../../viewmodels/forum_viewmodel.dart';
 import '../widgets/forum/forum_header.dart';
 import '../widgets/forum/forum_segment_tab.dart';
@@ -14,7 +14,7 @@ class ForumPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ForumViewModel(),
+      create: (_) => ForumViewModel()..initForum(),
       child: const _ForumPageContent(),
     );
   }
@@ -38,8 +38,45 @@ class _ForumPageContent extends StatelessWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const ForumHeader(
+                    ForumHeader(
                       showBackButton: false,
+                      onAddTap: () async {
+                        final result = await showDialog<bool>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => CreatePostDialog(
+                            onSubmit: ({
+                              required title,
+                              required content,
+                              required category,
+                              required tags,
+                            }) {
+                              return forumVM.createPost(
+                                title: title,
+                                content: content,
+                                category: category,
+                                tags: tags,
+                              );
+                            },
+                          ),
+                        );
+
+                        if (!context.mounted) return;
+
+                        if (result == true) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Postingan berhasil dibuat'),
+                            ),
+                          );
+                        } else if (forumVM.errorMessage != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(forumVM.errorMessage!),
+                            ),
+                          );
+                        }
+                      },
                     ),
                     Positioned(
                       left: 0,
@@ -66,17 +103,27 @@ class _ForumPageContent extends StatelessWidget {
                   onCategoryTap: forumVM.changeCategory,
                 ),
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(
-                      bottom: 105,
-                    ),
-                    itemCount: forumVM.filteredPosts.length,
-                    itemBuilder: (context, index) {
-                      final post = forumVM.filteredPosts[index];
-
-                      return ForumPostCard(post: post);
-                    },
-                  ),
+                  child: forumVM.isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFF91D2F),
+                          ),
+                        )
+                      : forumVM.errorMessage != null
+                          ? Center(
+                              child: Text(
+                                forumVM.errorMessage!,
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 105),
+                              itemCount: forumVM.filteredPosts.length,
+                              itemBuilder: (context, index) {
+                                final post = forumVM.filteredPosts[index];
+                                return ForumPostCard(post: post);
+                              },
+                            ),
                 ),
               ],
             ),

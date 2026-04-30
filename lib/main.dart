@@ -5,6 +5,7 @@ import 'views/login/login_page.dart';
 import 'viewmodels/quiz_viewmodel.dart';
 import 'viewmodels/login_viewmodel.dart';
 import 'viewmodels/home_viewmodel.dart';
+import 'viewmodels/certificate_viewmodel.dart';
 
 void main() {
   runApp(
@@ -14,6 +15,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => LoginViewModel()),
         ChangeNotifierProvider(create: (_) => HomeViewModel()),
         ChangeNotifierProvider(create: (_) => QuestViewModel()),
+        ChangeNotifierProvider(create: (_) => CertificateViewModel()),
       ],
       child: const MyApp(),
     ),

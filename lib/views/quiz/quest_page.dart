@@ -35,7 +35,7 @@ class _QuestPageState extends State<QuestPage> {
       body: Column(
         children: [
           HeaderBackground(
-            height: 292,
+            height: 305,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(28, 60, 28, 14),
               child: Column(

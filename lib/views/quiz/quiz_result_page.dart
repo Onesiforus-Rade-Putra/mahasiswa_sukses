@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:open_filex/open_filex.dart';
 import '../../viewmodels/quiz_viewmodel.dart';
+import '../../viewmodels/certificate_viewmodel.dart';
 
 class QuizResultPage extends StatelessWidget {
   final int quizId;
@@ -150,21 +153,55 @@ class QuizResultPage extends StatelessWidget {
                     onPressed: result.certificateId == null
                         ? null
                         : () async {
-                            final certificateId = await context
-                                .read<QuizViewModel>()
-                                .generateCertificate(quizId);
+                            final certVm = context.read<CertificateViewModel>();
+
+                            String? certificateId = result.certificateId;
+
+                            certificateId ??= await certVm.generateCertificate(
+                              quizId.toString(),
+                            );
 
                             if (!context.mounted) return;
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  certificateId == null
-                                      ? 'Gagal generate sertifikat'
-                                      : 'Certificate ID: $certificateId',
+                            if (certificateId == null ||
+                                certificateId.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    certVm.errorMessage ??
+                                        'Gagal generate sertifikat',
+                                  ),
                                 ),
+                              );
+                              return;
+                            }
+
+                            final File? file = await certVm.downloadCertificate(
+                              certificateId: certificateId,
+                              fileName: 'sertifikat_quiz_$quizId',
+                            );
+
+                            if (!context.mounted) return;
+
+                            if (file == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    certVm.errorMessage ??
+                                        'Gagal download sertifikat',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Sertifikat berhasil diunduh'),
                               ),
                             );
+
+                            await OpenFilex.open(file.path);
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00C853),

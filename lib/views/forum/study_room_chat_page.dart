@@ -5,19 +5,35 @@ import '../../viewmodels/forum_viewmodel.dart';
 import '../widgets/forum/chat_bubble.dart';
 
 class StudyRoomChatPage extends StatelessWidget {
-  const StudyRoomChatPage({super.key});
+  final int roomId;
+  final String roomTitle;
+
+  const StudyRoomChatPage({
+    super.key,
+    required this.roomId,
+    required this.roomTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ForumViewModel(),
-      child: const _StudyRoomChatPageContent(),
+      create: (_) => ForumViewModel()..initChatRoom(roomId),
+      child: _StudyRoomChatPageContent(
+        roomId: roomId,
+        roomTitle: roomTitle,
+      ),
     );
   }
 }
 
 class _StudyRoomChatPageContent extends StatelessWidget {
-  const _StudyRoomChatPageContent();
+  final int roomId;
+  final String roomTitle;
+
+  const _StudyRoomChatPageContent({
+    required this.roomId,
+    required this.roomTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,19 +47,39 @@ class _StudyRoomChatPageContent extends StatelessWidget {
         child: Column(
           children: [
             _ChatHeader(
+              title: roomTitle,
               onBackTap: () => Navigator.pop(context),
             ),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(23, 22, 23, 18),
-                itemCount: forumVM.chatMessages.length,
-                itemBuilder: (context, index) {
-                  final message = forumVM.chatMessages[index];
-                  return ChatBubble(message: message);
-                },
-              ),
+              child: forumVM.isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFF91D2F),
+                      ),
+                    )
+                  : forumVM.errorMessage != null
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              forumVM.errorMessage!,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          reverse: true,
+                          padding: const EdgeInsets.fromLTRB(23, 22, 23, 18),
+                          itemCount: forumVM.chatMessages.length,
+                          itemBuilder: (context, index) {
+                            final message = forumVM.chatMessages[index];
+                            return ChatBubble(message: message);
+                          },
+                        ),
             ),
-            const _ChatInputBar(),
+            _ChatInputBar(
+              roomId: roomId,
+            ),
           ],
         ),
       ),
@@ -52,9 +88,11 @@ class _StudyRoomChatPageContent extends StatelessWidget {
 }
 
 class _ChatHeader extends StatelessWidget {
+  final String title;
   final VoidCallback onBackTap;
 
   const _ChatHeader({
+    required this.title,
     required this.onBackTap,
   });
 
@@ -94,9 +132,11 @@ class _ChatHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 15),
-          const Text(
-            'Study Group: Persiapan UTS\nAlgoritma',
-            style: TextStyle(
+          Text(
+            'Study Group: $title',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
               height: 1.35,
@@ -186,8 +226,61 @@ class _HeaderBadge extends StatelessWidget {
   }
 }
 
-class _ChatInputBar extends StatelessWidget {
-  const _ChatInputBar();
+class _ChatInputBar extends StatefulWidget {
+  final int roomId;
+
+  const _ChatInputBar({
+    required this.roomId,
+  });
+
+  @override
+  State<_ChatInputBar> createState() => _ChatInputBarState();
+}
+
+class _ChatInputBarState extends State<_ChatInputBar> {
+  final TextEditingController messageController = TextEditingController();
+  bool isSending = false;
+
+  @override
+  void dispose() {
+    messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendMessage() async {
+    final text = messageController.text.trim();
+
+    if (text.isEmpty || isSending) return;
+
+    setState(() {
+      isSending = true;
+    });
+
+    final forumVM = context.read<ForumViewModel>();
+
+    final success = await forumVM.sendMessage(
+      roomId: widget.roomId,
+      message: text,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      isSending = false;
+    });
+
+    if (success) {
+      messageController.clear();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            forumVM.errorMessage ?? 'Gagal mengirim pesan',
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -221,18 +314,32 @@ class _ChatInputBar extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      'Tulis pesan...',
-                      style: TextStyle(
-                        color: Color(0xFFB0B0B0),
+                    child: TextField(
+                      controller: messageController,
+                      minLines: 1,
+                      maxLines: 1,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
+                      decoration: const InputDecoration(
+                        hintText: 'Tulis pesan...',
+                        hintStyle: TextStyle(
+                          color: Color(0xFFB0B0B0),
+                          fontSize: 13,
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFF222222),
                         fontSize: 13,
                       ),
                     ),
                   ),
-                  Icon(
+                  const Icon(
                     Icons.attach_file,
                     color: Color(0xFF777777),
                     size: 20,
@@ -242,17 +349,28 @@ class _ChatInputBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.send_outlined,
-              color: Color(0xFFF91D2F),
-              size: 22,
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: isSending
+                  ? const Padding(
+                      padding: EdgeInsets.all(11),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFF91D2F),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.send_outlined,
+                      color: Color(0xFFF91D2F),
+                      size: 22,
+                    ),
             ),
           ),
         ],
