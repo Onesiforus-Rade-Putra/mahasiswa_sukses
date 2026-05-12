@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mahasiswa_sukses/viewmodels/login_viewmodel.dart';
-import 'package:mahasiswa_sukses/views/home/home_page.dart';
-import 'package:mahasiswa_sukses/views/main_page.dart';
-import 'package:mahasiswa_sukses/views/signup/signup_page.dart';
 import 'package:mahasiswa_sukses/views/login/login_background.dart';
 import 'package:mahasiswa_sukses/views/main_page.dart';
+import 'package:mahasiswa_sukses/views/signup/signup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,19 +13,82 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final vm = LoginViewModel();
+  final LoginViewModel vm = LoginViewModel();
 
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController identifierController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   bool rememberMe = false;
   bool obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+
+    vm.addListener(_onVmChanged);
+    _checkLogin();
+  }
+
+  void _onVmChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
-    usernameController.dispose();
+    vm.removeListener(_onVmChanged);
+    vm.dispose();
+
+    identifierController.dispose();
     passwordController.dispose();
+
     super.dispose();
+  }
+
+  Future<void> _checkLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final token = prefs.getString('access_token') ?? prefs.getString('token');
+    final savedIdentifier = prefs.getString('email_or_username');
+
+    if (savedIdentifier != null && savedIdentifier.isNotEmpty) {
+      identifierController.text = savedIdentifier;
+      rememberMe = true;
+    }
+
+    if (token != null && token.isNotEmpty) {
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainPage()),
+      );
+    }
+  }
+
+  Future<void> _handleLogin() async {
+    final success = await vm.login(
+      emailOrUsername: identifierController.text.trim(),
+      password: passwordController.text.trim(),
+      rememberMe: rememberMe,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainPage()),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(vm.errorMessage ?? 'Login gagal'),
+      ),
+    );
   }
 
   InputDecoration _inputDecoration({
@@ -61,27 +122,21 @@ class _LoginPageState extends State<LoginPage> {
           width: 1.2,
         ),
       ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: Color(0xFFE53935),
+          width: 1,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: Color(0xFFE53935),
+          width: 1.2,
+        ),
+      ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _checkLogin();
-  }
-
-  Future<void> _checkLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    if (token != null) {
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainPage()),
-      );
-    }
   }
 
   @override
@@ -93,9 +148,13 @@ class _LoginPageState extends State<LoginPage> {
           SafeArea(
             child: SizedBox.expand(
               child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(
                   children: [
                     const SizedBox(height: 36),
+
+                    // Logo + App Name
                     Column(
                       children: [
                         Container(
@@ -105,15 +164,24 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(
-                            Icons.school,
-                            size: 36,
-                            color: Color(0xFFE53935),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              width: 42,
+                              height: 42,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.school,
+                                  size: 36,
+                                  color: Color(0xFFE53935),
+                                );
+                              },
+                            ),
                           ),
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          "Mahasiswa Sukses",
+                          'Mahasiswa Sukses',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -123,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          "Belajar Sambil Berkompetisi!",
+                          'Belajar Sambil Berkompetisi!',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -132,7 +200,10 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 34),
+
+                    // Card Login
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.symmetric(
@@ -153,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         children: [
                           const Text(
-                            "Selamat Datang",
+                            'Selamat Datang',
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
@@ -162,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 12),
                           const Text(
-                            "Login untuk melanjutkan petualangan mu",
+                            'Login untuk melanjutkan petualangan mu',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12.5,
@@ -170,11 +241,13 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 22),
+
+                          // Email / Username
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                "Email",
+                                'Email atau Username',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF8D8D8D),
@@ -183,19 +256,24 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               const SizedBox(height: 6),
                               TextField(
-                                controller: usernameController,
+                                controller: identifierController,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
                                 decoration: _inputDecoration(
-                                  hintText: "Email",
+                                  hintText: 'Email/Username',
                                 ),
                               ),
                             ],
                           ),
+
                           const SizedBox(height: 14),
+
+                          // Password
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                "Password",
+                                'Password',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Color(0xFF8D8D8D),
@@ -206,8 +284,14 @@ class _LoginPageState extends State<LoginPage> {
                               TextField(
                                 controller: passwordController,
                                 obscureText: obscurePassword,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) {
+                                  if (!vm.isLoading) {
+                                    _handleLogin();
+                                  }
+                                },
                                 decoration: _inputDecoration(
-                                  hintText: "Password",
+                                  hintText: 'Password',
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       obscurePassword
@@ -226,7 +310,10 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ],
                           ),
+
                           const SizedBox(height: 10),
+
+                          // Remember me + Forgot Password
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -256,7 +343,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   const SizedBox(width: 8),
                                   const Text(
-                                    "Remember me",
+                                    'Remember me',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF666666),
@@ -265,9 +352,11 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                               GestureDetector(
-                                onTap: () {},
+                                onTap: () {
+                                  // Nanti diarahkan ke forgot password page
+                                },
                                 child: const Text(
-                                  "Lupa password ?",
+                                  'Lupa password ?',
                                   style: TextStyle(
                                     color: Color(0xFF4A7DFF),
                                     fontSize: 12,
@@ -277,91 +366,67 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ],
                           ),
+
                           const SizedBox(height: 22),
-                          Container(
+
+                          // Button Login
+                          SizedBox(
                             width: double.infinity,
                             height: 46,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFFFF2D4D),
-                                  Color(0xFFFC3A3A),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFFFF2D4D),
+                                    Color(0xFFFC3A3A),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(13),
+                                border: Border.all(
+                                  color: const Color(0xFF5E8BFF),
+                                  width: 1.2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF5E8BFF)
+                                        .withOpacity(0.18),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(13),
-                              border: Border.all(
-                                color: const Color(0xFF5E8BFF),
-                                width: 1.2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFF5E8BFF).withOpacity(0.18),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(13),
-                                onTap: vm.isLoading
-                                    ? null
-                                    : () async {
-                                        final email =
-                                            usernameController.text.trim();
-                                        final password =
-                                            passwordController.text.trim();
-
-                                        final success = await vm.login(
-                                          email: email,
-                                          password: password,
-                                          rememberMe: rememberMe,
-                                        );
-
-                                        if (!mounted) return;
-
-                                        if (success) {
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (_) =>
-                                                    const MainPage()),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(vm.errorMessage ??
-                                                  'Login gagal'),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(13),
+                                  onTap: vm.isLoading ? null : _handleLogin,
+                                  child: Center(
+                                    child: vm.isLoading
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
                                             ),
-                                          );
-                                        }
-                                      },
-                                child: Center(
-                                  child: vm.isLoading
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
+                                          )
+                                        : const Text(
+                                            'Log In',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                        )
-                                      : const Text(
-                                          "Log In",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+
                           const SizedBox(height: 20),
+
+                          // To Signup
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
@@ -378,9 +443,9 @@ class _LoginPageState extends State<LoginPage> {
                                   fontSize: 12,
                                 ),
                                 children: [
-                                  TextSpan(text: "Belum punya akun ? "),
+                                  TextSpan(text: 'Belum punya akun ? '),
                                   TextSpan(
-                                    text: "Sign Up",
+                                    text: 'Sign Up',
                                     style: TextStyle(
                                       color: Color(0xFF4A7DFF),
                                       fontWeight: FontWeight.w600,
@@ -393,6 +458,7 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
+
                     const SizedBox(height: 90),
                   ],
                 ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mahasiswa_sukses/viewmodels/sigup_viewmodel.dart';
 import 'package:mahasiswa_sukses/services/auth_service.dart';
+import 'package:mahasiswa_sukses/viewmodels/sigup_viewmodel.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -10,23 +10,21 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  final vm = SignupViewModel();
+  final SignupViewModel vm = SignupViewModel();
+  final AuthService authService = AuthService();
 
-  final fullNameController = TextEditingController();
-  final emailController = TextEditingController();
-  final birthDateController = TextEditingController();
-  final phoneController = TextEditingController();
-  final nimController = TextEditingController();
-  final passwordController = TextEditingController();
-  final authService = AuthService();
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   void dispose() {
     fullNameController.dispose();
     emailController.dispose();
-    birthDateController.dispose();
+    usernameController.dispose();
     phoneController.dispose();
-    nimController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -43,31 +41,38 @@ class _SignupPageState extends State<SignupPage> {
         fontWeight: FontWeight.w400,
       ),
       filled: true,
-      fillColor: const Color(0xFFFFFFFF),
+      fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 18,
+        horizontal: 16,
+        vertical: 14,
       ),
       suffixIcon: suffixIcon,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(
-          color: Color(0xFFEAEAEA),
-          width: 1,
-        ),
-      ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(9),
         borderSide: const BorderSide(
-          color: Color(0xFFEAEAEA),
+          color: Color(0xFFE5E7EB),
           width: 1,
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(9),
         borderSide: const BorderSide(
-          color: Color(0xFFFF4D57),
-          width: 1.3,
+          color: Color(0xFFFF2D4D),
+          width: 1.2,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+        borderSide: const BorderSide(
+          color: Color(0xFFE53935),
+          width: 1,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+        borderSide: const BorderSide(
+          color: Color(0xFFE53935),
+          width: 1.2,
         ),
       ),
     );
@@ -76,13 +81,12 @@ class _SignupPageState extends State<SignupPage> {
   Widget _buildTextField({
     required String label,
     required String hintText,
-    TextEditingController? controller,
-    Function(String)? onChanged,
-    TextInputType? keyboardType,
-    bool readOnly = false,
+    required TextEditingController controller,
+    required Function(String) onChanged,
+    TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     Widget? suffixIcon,
-    VoidCallback? onTap,
+    TextInputAction textInputAction = TextInputAction.next,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,51 +94,33 @@ class _SignupPageState extends State<SignupPage> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF8D8D8D),
+            fontSize: 12.5,
+            color: Color(0xFF6B7280),
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          onChanged: onChanged,
-          keyboardType: keyboardType,
-          readOnly: readOnly,
-          obscureText: obscureText,
-          onTap: onTap,
-          style: const TextStyle(
-            fontSize: 15,
-            color: Color(0xFF4A4A4A),
-            fontWeight: FontWeight.w400,
-          ),
-          decoration: _inputDecoration(
-            hintText: hintText,
-            suffixIcon: suffixIcon,
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 46,
+          child: TextField(
+            controller: controller,
+            onChanged: onChanged,
+            keyboardType: keyboardType,
+            obscureText: obscureText,
+            textInputAction: textInputAction,
+            style: const TextStyle(
+              fontSize: 14.5,
+              color: Color(0xFF1F2937),
+              fontWeight: FontWeight.w400,
+            ),
+            decoration: _inputDecoration(
+              hintText: hintText,
+              suffixIcon: suffixIcon,
+            ),
           ),
         ),
       ],
     );
-  }
-
-  Future<void> _selectBirthDate() async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime(2000),
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
-    );
-
-    if (pickedDate != null) {
-      final day = pickedDate.day.toString().padLeft(2, '0');
-      final month = pickedDate.month.toString().padLeft(2, '0');
-      final year = pickedDate.year.toString();
-
-      final formatted = '$day/$month/$year';
-      birthDateController.text = formatted;
-      vm.setBirthDate(formatted);
-      setState(() {});
-    }
   }
 
   Future<void> _handleRegister() async {
@@ -155,16 +141,17 @@ class _SignupPageState extends State<SignupPage> {
       await authService.register(
         fullName: vm.fullName,
         email: vm.email,
-        birthDate: vm.formattedBirthDate,
+        username: vm.username,
         phoneNumber: vm.phoneNumber,
-        nim: vm.nim,
         password: vm.password,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Register berhasil')),
+        const SnackBar(
+          content: Text('Register berhasil, silakan login'),
+        ),
       );
 
       Navigator.pop(context);
@@ -194,136 +181,135 @@ class _SignupPageState extends State<SignupPage> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
+            begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFFF3131),
-              Color(0xFF9F0015),
+              Color(0xFFFF1E2D),
+              Color(0xFF9B0D17),
             ],
           ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 90,
+            ),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 360),
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFDFDFD),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x14000000),
-                        blurRadius: 12,
-                        offset: Offset(0, 4),
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        splashRadius: 22,
-                        icon: const Icon(
+                      // Back button
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(
                           Icons.arrow_back,
-                          size: 26,
-                          color: Color(0xFF2B2B2B),
+                          size: 24,
+                          color: Color(0xFF111827),
                         ),
                       ),
-                      const SizedBox(height: 26),
+
+                      const SizedBox(height: 30),
+
                       const Text(
                         'Sign up',
                         style: TextStyle(
                           fontSize: 30,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1D2433),
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF111827),
                           height: 1.1,
-                          letterSpacing: -0.4,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(height: 10),
+
+                      const SizedBox(height: 14),
+
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: RichText(
                           text: const TextSpan(
                             style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF8F8F8F),
+                              fontSize: 12.5,
+                              color: Color(0xFF6B7280),
                               fontWeight: FontWeight.w400,
                             ),
                             children: [
-                              TextSpan(text: 'Sudah punya akun ? '),
+                              TextSpan(text: 'Sudah punya akun ?  '),
                               TextSpan(
                                 text: 'Login',
                                 style: TextStyle(
-                                  color: Color(0xFF2F80ED),
-                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF4A7DFF),
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 28),
+
                       _buildTextField(
                         label: 'Nama Lengkap',
                         hintText: 'Nama Lengkap',
                         controller: fullNameController,
                         onChanged: vm.setFullName,
                       ),
-                      const SizedBox(height: 16),
+
+                      const SizedBox(height: 14),
+
                       _buildTextField(
                         label: 'Email',
-                        hintText: 'Contoh@gmail.com',
+                        hintText: 'contoh@gmail.com',
                         controller: emailController,
                         onChanged: vm.setEmail,
                         keyboardType: TextInputType.emailAddress,
                       ),
-                      const SizedBox(height: 16),
+
+                      const SizedBox(height: 14),
+
                       _buildTextField(
-                        label: 'Tanggal Lahir',
-                        hintText: 'dd/mm/yyyy',
-                        controller: birthDateController,
-                        onChanged: vm.setBirthDate,
-                        readOnly: true,
-                        onTap: _selectBirthDate,
-                        suffixIcon: const Padding(
-                          padding: EdgeInsets.only(right: 14),
-                          child: Icon(
-                            Icons.calendar_today_outlined,
-                            size: 20,
-                            color: Color(0xFF8A8A8A),
-                          ),
-                        ),
+                        label: 'Username',
+                        hintText: '',
+                        controller: usernameController,
+                        onChanged: vm.setUsername,
                       ),
-                      const SizedBox(height: 16),
+
+                      const SizedBox(height: 14),
+
                       _buildTextField(
-                        label: 'No Telepon',
+                        label: 'No Telephone',
                         hintText: '0812-3245-2311',
                         controller: phoneController,
                         onChanged: vm.setPhoneNumber,
                         keyboardType: TextInputType.phone,
                       ),
-                      const SizedBox(height: 16),
+
+                      const SizedBox(height: 14),
+
                       _buildTextField(
-                        label: 'NIM',
-                        hintText: 'Masukkan NIM',
-                        controller: nimController,
-                        onChanged: vm.setNim,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        label: 'Password',
+                        label: 'Set Password',
                         hintText: '*******',
                         controller: passwordController,
                         onChanged: vm.setPassword,
                         obscureText: vm.isPasswordHidden,
+                        textInputAction: TextInputAction.done,
                         suffixIcon: IconButton(
                           onPressed: () {
                             setState(() {
@@ -334,46 +320,37 @@ class _SignupPageState extends State<SignupPage> {
                             vm.isPasswordHidden
                                 ? Icons.visibility_off_outlined
                                 : Icons.visibility_outlined,
-                            size: 22,
-                            color: const Color(0xFF6F6672),
+                            size: 20,
+                            color: const Color(0xFF9CA3AF),
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 24),
+
                       SizedBox(
                         width: double.infinity,
-                        height: 54,
+                        height: 49,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            gradient: const LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Color(0xFFFF3D4D),
-                                Color(0xFFFF2338),
-                              ],
-                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFFFF2338),
                             border: Border.all(
-                              color: const Color(0xFF4A78FF),
-                              width: 1,
+                              color: const Color(0xFF3B82F6),
+                              width: 1.2,
                             ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x22000000),
-                                blurRadius: 8,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
                           ),
                           child: ElevatedButton(
                             onPressed: vm.isLoading ? null : _handleRegister,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,
+                              disabledBackgroundColor: Colors.transparent,
                               foregroundColor: Colors.white,
+                              disabledForegroundColor: Colors.white,
                               shadowColor: Colors.transparent,
+                              surfaceTintColor: Colors.transparent,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             child: vm.isLoading
@@ -388,7 +365,7 @@ class _SignupPageState extends State<SignupPage> {
                                 : const Text(
                                     'Register',
                                     style: TextStyle(
-                                      fontSize: 17,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),

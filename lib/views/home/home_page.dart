@@ -1,14 +1,20 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:mahasiswa_sukses/models/history_model.dart';
 import 'package:mahasiswa_sukses/models/task_model.dart';
 import 'package:mahasiswa_sukses/viewmodels/home_viewmodel.dart';
+import 'package:mahasiswa_sukses/views/achievement/achievement_page.dart';
+import 'package:mahasiswa_sukses/views/profile/profile_page.dart';
 import 'package:mahasiswa_sukses/views/target/target_page.dart';
-import 'package:mahasiswa_sukses/views/widgets/custom_bottom_navbar.dart';
-import 'package:mahasiswa_sukses/views/widgets/header_background.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final ValueChanged<int>? onChangeTab;
+
+  const HomePage({
+    super.key,
+    this.onChangeTab,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -16,7 +22,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final HomeViewModel vm = HomeViewModel();
-  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -36,289 +41,124 @@ class _HomePageState extends State<HomePage> {
     if (mounted) setState(() {});
   }
 
-  void _goToTargetPage(BuildContext context) {
+  void _goToTargetPage() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const TargetPage()),
+      MaterialPageRoute(builder: (_) => const TargetPage()),
     );
   }
 
-  Widget statCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Expanded(
-      child: Container(
-        height: 90,
-        margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.14),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.35),
-            width: 1.2,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6A6A),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: Colors.white, size: 15),
-            ),
-            const Spacer(),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
+  void _goToAchievementPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AchievementPage()),
     );
   }
 
-  Widget featureCard({
-    required IconData icon,
-    required String title,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF2020),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1A000000),
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(icon, color: Colors.white, size: 24),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 11.5,
-            height: 1.3,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF1E1E1E),
-          ),
-        ),
-      ],
+  void _goToForum() {
+    widget.onChangeTab?.call(1);
+  }
+
+  void _goToQuiz() {
+    widget.onChangeTab?.call(2);
+  }
+
+  void _goToLeaderboard() {
+    widget.onChangeTab?.call(3);
+  }
+
+  void _goToSetting() {
+    widget.onChangeTab?.call(4);
+  }
+
+  void _goToProfilePage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfilePage()),
     );
   }
 
-  Widget targetCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String status,
-    required Color statusColor,
-    required Color statusBg,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9E9E9)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: const Color(0xFF9B9B9B), size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF222222),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusBg,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    height: 1.4,
-                    color: Color(0xFF7A7A7A),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+  String _shortName(String name) {
+    final cleanName = name.trim();
+
+    if (cleanName.isEmpty) return 'Mahasiswa';
+
+    final parts = cleanName.split(' ');
+    return parts.first;
+  }
+
+  String _formatXp(int value) {
+    final text = value.toString();
+
+    return text.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (match) => '${match[1]},',
     );
   }
 
-  Widget activityItem({
-    required String title,
-    required String time,
-    required String xp,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF222222),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF8B8B8B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            xp,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF22B25F),
-            ),
-          ),
-        ],
-      ),
-    );
+  String _priorityLabel(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'tinggi':
+      case 'high':
+        return 'High';
+      case 'sedang':
+      case 'medium':
+        return 'Medium';
+      case 'rendah':
+      case 'low':
+        return 'Low';
+      default:
+        return priority.isEmpty ? 'Low' : priority;
+    }
   }
 
   Color _priorityTextColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'tinggi':
-        return const Color(0xFFFF4D4F);
+      case 'high':
+        return const Color(0xFFFF2338);
       case 'sedang':
-        return const Color(0xFFFF9F1A);
+      case 'medium':
+        return const Color(0xFFFF7A1A);
       case 'rendah':
-        return const Color(0xFF22B25F);
+      case 'low':
+        return const Color(0xFF18B95B);
       default:
-        return const Color(0xFF7A7A7A);
+        return const Color(0xFF18B95B);
     }
   }
 
   Color _priorityBgColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'tinggi':
-        return const Color(0xFFFFE5E5);
+      case 'high':
+        return const Color(0xFFFFE9EC);
       case 'sedang':
-        return const Color(0xFFFFF1D9);
+      case 'medium':
+        return const Color(0xFFFFE9D8);
       case 'rendah':
-        return const Color(0xFFE4F8EC);
+      case 'low':
+        return const Color(0xFFE3FBEF);
       default:
-        return const Color(0xFFF1F1F1);
+        return const Color(0xFFE3FBEF);
     }
-  }
-
-  String _priorityLabel(String priority) {
-    switch (priority.toLowerCase()) {
-      case 'tinggi':
-        return 'High';
-      case 'sedang':
-        return 'Medium';
-      case 'rendah':
-        return 'Low';
-      default:
-        return priority;
-    }
-  }
-
-  String _relativeTime(String isoString) {
-    final date = DateTime.tryParse(isoString)?.toLocal();
-    if (date == null) return '-';
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 1) return 'Baru saja';
-    if (difference.inMinutes < 60) return '${difference.inMinutes} menit lalu';
-    if (difference.inHours < 24) return '${difference.inHours} jam lalu';
-    if (difference.inDays < 7) return '${difference.inDays} hari lalu';
-    return '${date.day}/${date.month}/${date.year}';
   }
 
   String _formatDeadline(String isoString) {
     final date = DateTime.tryParse(isoString)?.toLocal();
+
     if (date == null) return '';
+
+    const days = [
+      'Sen',
+      'Sel',
+      'Rab',
+      'Kam',
+      'Jum',
+      'Sab',
+      'Min',
+    ];
+
     const months = [
       'Jan',
       'Feb',
@@ -334,102 +174,463 @@ class _HomePageState extends State<HomePage> {
       'Des',
     ];
 
+    final dayName = days[date.weekday - 1];
+    final monthName = months[date.month - 1];
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
-    return '${date.day} ${months[date.month - 1]} ${date.year}, $hour:$minute';
+
+    return '$dayName, ${date.day} $monthName, $hour:$minute';
+  }
+
+  String _relativeTime(String isoString) {
+    final date = DateTime.tryParse(isoString)?.toLocal();
+
+    if (date == null) return '-';
+
+    final diff = DateTime.now().difference(date);
+
+    if (diff.inMinutes < 1) return 'Baru saja';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
+    if (diff.inHours < 24) return '${diff.inHours} jam lalu';
+    if (diff.inDays < 7) return '${diff.inDays} hari lalu';
+
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   Widget _buildAvatar() {
-    if (vm.avatarUrl == null || vm.token == null) {
+    if (vm.avatarUrl.isEmpty || vm.token.isEmpty) {
       return _avatarPlaceholder();
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Image.network(
-        vm.avatarUrl!,
-        width: 48,
-        height: 48,
-        fit: BoxFit.cover,
-        headers: {'Authorization': 'Bearer ${vm.token!}'},
-        errorBuilder: (_, __, ___) => _avatarPlaceholder(),
+    return GestureDetector(
+      onTap: _goToProfilePage,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          vm.avatarUrl,
+          width: 48,
+          height: 48,
+          fit: BoxFit.cover,
+          headers: {
+            'Authorization': 'Bearer ${vm.token}',
+          },
+          errorBuilder: (_, __, ___) => _avatarPlaceholder(),
+        ),
       ),
     );
   }
 
   Widget _avatarPlaceholder() {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.white.withOpacity(0.55), width: 2),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: const Icon(
-        Icons.person_outline,
-        color: Colors.white,
-        size: 24,
+    return GestureDetector(
+      onTap: _goToProfilePage,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.38),
+            width: 1,
+          ),
+        ),
+        child: const Icon(
+          Icons.person_outline_rounded,
+          color: Colors.white,
+          size: 25,
+        ),
       ),
     );
   }
 
-  Widget _buildQuestBoxes() {
-    final displayedCount = math.max(
-        3, math.min(3, vm.totalQuestCount == 0 ? 3 : vm.totalQuestCount));
-    final displayedQuests = vm.quests.take(displayedCount).toList();
-
-    return Row(
-      children: [
-        ...List.generate(displayedCount, (index) {
-          final isCompleted = index < displayedQuests.length
-              ? displayedQuests[index].isCompleted
-              : index < vm.completedQuestCount;
-
-          return Container(
-            width: 34,
-            height: 34,
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF2D2D),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: isCompleted
-                  ? const Icon(Icons.check, size: 18, color: Colors.white)
-                  : Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-            ),
-          );
-        }),
-        const Spacer(),
-        SizedBox(
-          height: 48,
-          child: ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              backgroundColor: const Color(0xFFFF2D2D),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+  Widget _statCard({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Expanded(
+      child: Container(
+        height: 109,
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 13),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.14),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.12),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 33,
+              height: 33,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 18,
               ),
             ),
-            child: const Row(
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return Container(
+      height: 305,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFED1E28),
+            Color(0xFF9B0D17),
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, topPadding + 50, 20, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Mulai',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Halo, ${_shortName(vm.greetingName)}!',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      const Text(
+                        'Siap Belajar Hari ini?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          height: 1.1,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(width: 8),
-                Icon(Icons.arrow_forward_ios, size: 14),
+                _buildAvatar(),
               ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _statCard(
+                  icon: Icons.star_rounded,
+                  title: 'Total XP',
+                  value: _formatXp(vm.totalPoints),
+                ),
+                const SizedBox(width: 13),
+                _statCard(
+                  icon: Icons.leaderboard_rounded,
+                  title: 'Rangking',
+                  value: '#${vm.ranking}',
+                ),
+                const SizedBox(width: 13),
+                _statCard(
+                  icon: Icons.bolt_rounded,
+                  title: 'Streak',
+                  value: '${vm.streak} hari',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _questNumberBox({
+    required int number,
+    required bool isCompleted,
+  }) {
+    return Container(
+      width: 39,
+      height: 39,
+      decoration: BoxDecoration(
+        color: const Color(0xFFED0711),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: isCompleted
+            ? const Icon(
+                Icons.check_rounded,
+                color: Colors.white,
+                size: 22,
+              )
+            : Text(
+                '$number',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildDailyQuestCard() {
+    final totalQuest = math.max(vm.totalQuestCount, 3);
+    final completedQuest = vm.completedQuestCount;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.14),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 33,
+                height: 33,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE9EC),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.calendar_today_rounded,
+                  color: Color(0xFFED0711),
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Quest Harian',
+                style: TextStyle(
+                  color: Color(0xFFED0711),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Selesaikan $totalQuest Quest & Raih Bonus',
+            style: const TextStyle(
+              color: Color(0xFF171717),
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 13),
+          Row(
+            children: [
+              _questNumberBox(
+                number: 1,
+                isCompleted: completedQuest >= 1,
+              ),
+              const SizedBox(width: 10),
+              _questNumberBox(
+                number: 2,
+                isCompleted: completedQuest >= 2,
+              ),
+              const SizedBox(width: 10),
+              _questNumberBox(
+                number: 3,
+                isCompleted: completedQuest >= 3,
+              ),
+              const Spacer(),
+              SizedBox(
+                width: 97,
+                height: 39,
+                child: ElevatedButton(
+                  onPressed: _goToQuiz,
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: const Color(0xFFED0711),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Mulai',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 13,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeProgressCard() {
+    final totalQuest = vm.totalQuestCount;
+    final completedQuest = vm.completedQuestCount;
+    final progress = vm.questProgress.clamp(0.0, 1.0);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: const Color(0xFFEDEDED),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Selamat Datang Kembali!',
+            style: TextStyle(
+              color: Color(0xFF171717),
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Anda telah menyelesaikan $completedQuest dari $totalQuest quest hari ini.\nTetap semangat!',
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 13,
+              height: 1.25,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 7,
+              backgroundColor: const Color(0xFFD7D7D7),
+              valueColor: const AlwaysStoppedAnimation(
+                Color(0xFFFF4A16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _goToQuiz,
+              icon: const Icon(
+                Icons.play_arrow_rounded,
+                size: 20,
+              ),
+              label: const Text('Mulai Quiz'),
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: const Color(0xFFED0711),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 13),
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: _goToTargetPage,
+              icon: const Icon(
+                Icons.add_rounded,
+                size: 20,
+              ),
+              label: const Text('Tambah Target'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFED0711),
+                side: const BorderSide(
+                  color: Color(0xFFED0711),
+                  width: 1.5,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ),
         ),
@@ -437,421 +638,440 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildActiveTasks() {
-    final tasks = vm.activeTasks.take(3).toList();
-    if (tasks.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Text(
-          'Belum ada target aktif.',
-          style: TextStyle(fontSize: 12, color: Color(0xFF7A7A7A)),
-        ),
-      );
-    }
+  Widget _featureItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Container(
+            width: 55,
+            height: 55,
+            decoration: BoxDecoration(
+              color: const Color(0xFFED0711),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: const TextStyle(
+              color: Color(0xFF374151),
+              fontSize: 12.5,
+              height: 1.15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return Column(
-      children: tasks.map((task) => _taskItem(task)).toList(),
+  Widget _buildFeatureGrid() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _featureItem(
+          icon: Icons.emoji_events_rounded,
+          title: 'Achievement',
+          onTap: _goToAchievementPage,
+        ),
+        _featureItem(
+          icon: Icons.track_changes_rounded,
+          title: 'Target\n& Tugas',
+          onTap: _goToTargetPage,
+        ),
+        _featureItem(
+          icon: Icons.chat_bubble_rounded,
+          title: 'Forum',
+          onTap: _goToForum,
+        ),
+        _featureItem(
+          icon: Icons.leaderboard_rounded,
+          title: 'Leaderboard',
+          onTap: _goToLeaderboard,
+        ),
+      ],
+    );
+  }
+
+  Widget _taskIcon(TaskModel task) {
+    final isCompleted = task.isCompleted;
+
+    return Container(
+      width: 43,
+      height: 43,
+      decoration: BoxDecoration(
+        color: isCompleted ? const Color(0xFFE1F9EC) : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        isCompleted ? Icons.check_rounded : Icons.circle_rounded,
+        color: isCompleted ? const Color(0xFF22C55E) : const Color(0xFFB7BEC8),
+        size: isCompleted ? 22 : 10,
+      ),
     );
   }
 
   Widget _taskItem(TaskModel task) {
-    final extra = _formatDeadline(task.date);
-    final subtitle = task.description.trim().isEmpty
-        ? (extra.isEmpty ? '-' : extra)
-        : (extra.isEmpty ? task.description : '${task.description}\n$extra');
+    final deadline = _formatDeadline(task.deadline);
+    final category =
+        task.category.trim().isEmpty ? 'Tugas Kuliah' : task.category;
 
-    return targetCard(
-      icon: task.isCompleted ? Icons.check : Icons.circle_outlined,
-      title: task.title,
-      subtitle: subtitle,
-      status: _priorityLabel(task.priority),
-      statusColor: _priorityTextColor(task.priority),
-      statusBg: _priorityBgColor(task.priority),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 13),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: const Color(0xFFEDEDED),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _taskIcon(task),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    task.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF171717),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    task.description.isEmpty ? '-' : task.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12.5,
+                      height: 1.25,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.access_time_rounded,
+                        color: Color(0xFFFF2338),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: RichText(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: deadline,
+                                style: const TextStyle(
+                                  color: Color(0xFFFF2338),
+                                ),
+                              ),
+                              TextSpan(
+                                text:
+                                    deadline.isEmpty ? category : ' $category',
+                                style: const TextStyle(
+                                  color: Color(0xFF8B8B8B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 5,
+            ),
+            decoration: BoxDecoration(
+              color: _priorityBgColor(task.priority),
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Text(
+              _priorityLabel(task.priority),
+              style: TextStyle(
+                color: _priorityTextColor(task.priority),
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildHistories() {
-    final items = vm.latestHistories.take(3).toList();
-    if (items.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Text(
-          'Belum ada aktivitas terbaru.',
-          style: TextStyle(fontSize: 12, color: Color(0xFF7A7A7A)),
+  Widget _buildActiveTasks() {
+    final tasks = vm.activeTasks.take(3).toList();
+
+    if (tasks.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: const Color(0xFFEDEDED),
+          ),
+        ),
+        child: const Text(
+          'Belum ada target aktif.',
+          style: TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 13,
+          ),
         ),
       );
     }
 
     return Column(
-      children: items.map((item) => _historyItem(item)).toList(),
+      children: tasks.map(_taskItem).toList(),
     );
   }
 
-  Widget _historyItem(HistoryModel item) {
+  Widget _historyItem(HistoryModel item, bool showDivider) {
     final xp = item.xpReward > 0 ? '+${item.xpReward} XP' : '0 XP';
-    return activityItem(
-      title: item.title,
-      time: _relativeTime(item.completedAt),
-      xp: xp,
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF171717),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      _relativeTime(item.completedAt),
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                xp,
+                style: const TextStyle(
+                  color: Color(0xFF16A34A),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (showDivider)
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: Color(0xFFF1F1F1),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLatestActivities() {
+    final histories = vm.latestHistories.take(3).toList();
+
+    if (histories.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: const Color(0xFFEDEDED),
+          ),
+        ),
+        child: const Text(
+          'Belum ada aktivitas terbaru.',
+          style: TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 13,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: const Color(0xFFEDEDED),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: List.generate(histories.length, (index) {
+          return _historyItem(
+            histories[index],
+            index != histories.length - 1,
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: Color(0xFF171717),
+        fontSize: 17,
+        fontWeight: FontWeight.w900,
+      ),
+    );
+  }
+
+  Widget _errorBox() {
+    if (vm.errorMessage == null) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFFFD7DC),
+        ),
+      ),
+      child: Text(
+        vm.errorMessage!,
+        style: const TextStyle(
+          color: Color(0xFFB42318),
+          fontSize: 12.5,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _loadingBar() {
+    if (!vm.isLoading) return const SizedBox.shrink();
+
+    return const Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: LinearProgressIndicator(
+        minHeight: 3,
+        color: Color(0xFFED0711),
+        backgroundColor: Color(0xFFFFE5E8),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      backgroundColor: const Color(0xFFF4F4F4),
-      body: SafeArea(
-        bottom: false,
-        child: vm.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: vm.refresh,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
+      backgroundColor: const Color(0xFFFFFFFF),
+      body: RefreshIndicator(
+        onRefresh: vm.refresh,
+        color: const Color(0xFFED0711),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _buildHeader(),
+              Transform.translate(
+                offset: const Offset(0, -26),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 125),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      HeaderBackground(
-                        height: 250,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-                          child: Column(
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(top: 6),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Halo, ${vm.greetingName}!',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          const Text(
-                                            'Siap Belajar Hari ini?',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              height: 1.15,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      _buildAvatar(),
-                                      Positioned(
-                                        top: -2,
-                                        right: -2,
-                                        child: Container(
-                                          width: 16,
-                                          height: 16,
-                                          decoration: const BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons.bolt,
-                                              size: 10,
-                                              color: Color(0xFFFF1F2D),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  statCard(
-                                    icon: Icons.star,
-                                    title: 'Total Poin',
-                                    value: vm.summary.totalXpEarned.toString(),
-                                  ),
-                                  statCard(
-                                    icon: Icons.emoji_events_outlined,
-                                    title: 'Rangking',
-                                    value: '#${vm.summary.currentRanking}',
-                                  ),
-                                  statCard(
-                                    icon: Icons.bolt,
-                                    title: 'Streak',
-                                    value: '${vm.summary.currentStreak} hari',
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Transform.translate(
-                              offset: const Offset(0, -40),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(18),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Color(0x14000000),
-                                      blurRadius: 10,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Row(
-                                      children: [
-                                        Icon(
-                                          Icons.card_giftcard,
-                                          color: Color(0xFFFF3B30),
-                                          size: 18,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Quest Harian',
-                                          style: TextStyle(
-                                            color: Color(0xFFFF3B30),
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 14),
-                                    Text(
-                                      'Selesaikan ${math.max(3, vm.totalQuestCount)} Quest & Raih Bonus',
-                                      style: const TextStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF252525),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _buildQuestBoxes(),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Transform.translate(
-                              offset: const Offset(0, -20),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: const Color(0xFFEAEAEA),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Selamat Datang Kembali!',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Anda sudah menyelesaikan ${vm.completedQuestCount} dari ${vm.totalQuestCount} quest hari ini.\nTetap semangat!',
-                                      style: const TextStyle(
-                                        fontSize: 11.5,
-                                        height: 1.4,
-                                        color: Color(0xFF7D7D7D),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: LinearProgressIndicator(
-                                        value: vm.questProgress,
-                                        minHeight: 8,
-                                        backgroundColor:
-                                            const Color(0xFFE2E2E2),
-                                        valueColor:
-                                            const AlwaysStoppedAnimation(
-                                          Color(0xFFFF2D2D),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (vm.errorMessage != null) ...[
-                              Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(bottom: 16),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF3F3),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                      color: const Color(0xFFFFD7D7)),
-                                ),
-                                child: Text(
-                                  vm.errorMessage!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFB42318),
-                                  ),
-                                ),
-                              ),
-                            ],
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 52,
-                                    child: ElevatedButton(
-                                      onPressed: () {},
-                                      style: ElevatedButton.styleFrom(
-                                        elevation: 0,
-                                        backgroundColor:
-                                            const Color(0xFFFF2020),
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Mulai Quiz',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 52,
-                                    child: OutlinedButton(
-                                      onPressed: () => _goToTargetPage(context),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor:
-                                            const Color(0xFFFF2020),
-                                        side: const BorderSide(
-                                          color: Color(0xFFFF2020),
-                                          width: 1.4,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Tambah Target',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 28),
-                            const Text(
-                              'Jelajahi Fitur',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF1E1E1E),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            GridView.count(
-                              crossAxisCount: 4,
-                              crossAxisSpacing: 14,
-                              mainAxisSpacing: 14,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              childAspectRatio: 0.70,
-                              children: [
-                                featureCard(
-                                  icon: Icons.emoji_events_outlined,
-                                  title: 'Achievement',
-                                ),
-                                GestureDetector(
-                                  onTap: () => _goToTargetPage(context),
-                                  child: featureCard(
-                                    icon: Icons.track_changes,
-                                    title: 'Target\n& Tugas',
-                                  ),
-                                ),
-                                featureCard(
-                                  icon: Icons.forum_outlined,
-                                  title: 'Forum',
-                                ),
-                                featureCard(
-                                  icon: Icons.person_outline,
-                                  title: 'Leaderboard',
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 26),
-                            const Text(
-                              'Target Aktif',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF1E1E1E),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            _buildActiveTasks(),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'Aktivitas Terbaru',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF1E1E1E),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            _buildHistories(),
-                          ],
-                        ),
-                      ),
+                      _buildDailyQuestCard(),
+                      const SizedBox(height: 36),
+                      _loadingBar(),
+                      _errorBox(),
+                      _buildWelcomeProgressCard(),
+                      const SizedBox(height: 22),
+                      _buildActionButtons(),
+                      const SizedBox(height: 22),
+                      _sectionTitle('Jelajahi Fitur'),
+                      const SizedBox(height: 15),
+                      _buildFeatureGrid(),
+                      const SizedBox(height: 27),
+                      _sectionTitle('Target Aktif'),
+                      const SizedBox(height: 14),
+                      _buildActiveTasks(),
+                      const SizedBox(height: 15),
+                      _sectionTitle('Aktivitas Terbaru'),
+                      const SizedBox(height: 14),
+                      _buildLatestActivities(),
                     ],
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
       ),
     );
   }
