@@ -25,16 +25,57 @@ class QuizModel {
 
   factory QuizModel.fromJson(Map<String, dynamic> json) {
     return QuizModel(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      category: json['category'] ?? '',
-      durationMinutes: json['duration_minutes'] ?? 0,
-      minimumScore: json['minimum_score'] ?? 0,
-      xpReward: json['xp_reward'] ?? 0,
-      difficulty: json['difficulty'] ?? 'easy',
-      lastAttemptSuccessful: json['last_attempt_successful'] ?? false,
-      certificateId: json['certificate_id'],
-      completionCount: json['completion_count'] ?? 0,
+      id: _toInt(json['id'] ?? json['quiz_id']),
+      title: json['title']?.toString() ?? json['name']?.toString() ?? '',
+      category: json['category']?.toString() ??
+          json['subject']?.toString() ??
+          json['type']?.toString() ??
+          '',
+      durationMinutes: _toInt(
+        json['duration_minutes'] ??
+            json['durationMinutes'] ??
+            json['duration'] ??
+            0,
+      ),
+      minimumScore: _toInt(
+        json['minimum_score'] ??
+            json['minimumScore'] ??
+            json['passing_score'] ??
+            0,
+      ),
+      xpReward: _toInt(
+        json['xp_reward'] ?? json['xpReward'] ?? json['xp'] ?? 0,
+      ),
+      difficulty: json['difficulty']?.toString() ?? 'easy',
+      lastAttemptSuccessful: _toBool(
+        json['last_attempt_successful'] ??
+            json['lastAttemptSuccessful'] ??
+            json['is_completed'] ??
+            json['isCompleted'] ??
+            false,
+      ),
+      certificateId: json['certificate_id']?.toString() ??
+          json['certificateId']?.toString(),
+      completionCount: _toInt(
+        json['completion_count'] ?? json['completionCount'] ?? 0,
+      ),
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static bool _toBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) {
+      final lower = value.toLowerCase();
+      return lower == 'true' || lower == '1' || lower == 'yes';
+    }
+    return false;
   }
 }

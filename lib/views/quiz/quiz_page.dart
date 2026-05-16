@@ -32,9 +32,9 @@ class _QuizPageState extends State<QuizPage> {
       body: Column(
         children: [
           HeaderBackground(
-            height: 292,
+            height: HeaderBackground.quizQuestHeight,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 58, 24, 16),
+              padding: const EdgeInsets.fromLTRB(24, 42, 24, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -59,7 +59,7 @@ class _QuizPageState extends State<QuizPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.24),
+                      color: Colors.white.withValues(alpha: 0.24),
                       borderRadius: BorderRadius.circular(9),
                       border: Border.all(color: Colors.white),
                     ),
@@ -77,7 +77,7 @@ class _QuizPageState extends State<QuizPage> {
                               ),
                             ),
                             Text(
-                              '${vm.progress} / 4 Quiz',
+                              '${vm.completedQuizToday} / ${vm.totalQuizToday} Quiz',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -90,7 +90,7 @@ class _QuizPageState extends State<QuizPage> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: LinearProgressIndicator(
-                            value: vm.progress / 4,
+                            value: vm.quizProgressValue,
                             minHeight: 5,
                             backgroundColor: Colors.white.withOpacity(0.85),
                             valueColor: const AlwaysStoppedAnimation(
@@ -113,36 +113,22 @@ class _QuizPageState extends State<QuizPage> {
                     child: Row(
                       children: [
                         Expanded(
-                          child: GestureDetector(
+                          child: _HeaderMainTab(
+                            active: selectedMainTab == 0,
+                            icon: Icons.emoji_events_outlined,
+                            label: 'Quiz',
                             onTap: () {
                               setState(() {
                                 selectedMainTab = 0;
                               });
                             },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: selectedMainTab == 0
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'Quiz',
-                                  style: TextStyle(
-                                    color: selectedMainTab == 0
-                                        ? const Color(0xFFED1E28)
-                                        : Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ),
                           ),
                         ),
                         Expanded(
-                          child: GestureDetector(
+                          child: _HeaderMainTab(
+                            active: selectedMainTab == 1,
+                            icon: Icons.assignment_outlined,
+                            label: 'Quest',
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -151,26 +137,6 @@ class _QuizPageState extends State<QuizPage> {
                                 ),
                               );
                             },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: selectedMainTab == 1
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  'Quest',
-                                  style: TextStyle(
-                                    color: selectedMainTab == 1
-                                        ? const Color(0xFFED1E28)
-                                        : Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ),
                           ),
                         ),
                       ],
@@ -191,8 +157,61 @@ class _QuizPageState extends State<QuizPage> {
   }
 }
 
+class _HeaderMainTab extends StatelessWidget {
+  final bool active;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _HeaderMainTab({
+    required this.active,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = const Color(0xFFED1E28);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: active ? activeColor : Colors.white,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: TextStyle(
+                color: active ? activeColor : Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _StreakSection extends StatelessWidget {
-  const _StreakSection();
+  final int streak;
+
+  const _StreakSection({
+    required this.streak,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -216,12 +235,12 @@ class _StreakSection extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Streak Kamu',
                   style: TextStyle(
                     color: Color(0xFFED1E28),
@@ -229,10 +248,10 @@ class _StreakSection extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  '7 hari berturut-turut',
-                  style: TextStyle(
+                  '$streak hari berturut-turut',
+                  style: const TextStyle(
                     color: Color(0xFFED1E28),
                     fontSize: 11,
                   ),
@@ -253,84 +272,6 @@ class _StreakSection extends StatelessWidget {
   }
 }
 
-class _QuestSwitchTab extends StatelessWidget {
-  final int selectedIndex;
-  final ValueChanged<int> onChanged;
-
-  const _QuestSwitchTab({
-    required this.selectedIndex,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        color: const Color(0xFF9D3238).withOpacity(0.85),
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(
-          color: const Color(0xFFED1E28),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _QuestTabButton(
-              text: 'Quest harian',
-              active: selectedIndex == 0,
-              onTap: () => onChanged(0),
-            ),
-          ),
-          Expanded(
-            child: _QuestTabButton(
-              text: 'Quest Mingguan',
-              active: selectedIndex == 1,
-              onTap: () => onChanged(1),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuestTabButton extends StatelessWidget {
-  final String text;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _QuestTabButton({
-    required this.text,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: TextStyle(
-              color: active ? const Color(0xFFED1E28) : Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _QuizContent extends StatelessWidget {
   final QuizViewModel vm;
 
@@ -343,7 +284,9 @@ class _QuizContent extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        const _StreakSection(),
+        _StreakSection(
+          streak: vm.currentStreak,
+        ),
         const SizedBox(height: 10),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24),
@@ -369,7 +312,10 @@ class _QuizContent extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28),
           child: vm.quizzes.isNotEmpty
-              ? QuizCard(quiz: vm.quizzes.first)
+              ? QuizCard(
+                  quiz: vm.quizzes.first,
+                  showStatusBadge: false,
+                )
               : const SizedBox(),
         ),
         const SizedBox(height: 12),

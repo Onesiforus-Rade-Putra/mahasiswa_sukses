@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/quest_model.dart';
 
 class QuestCard extends StatelessWidget {
@@ -45,7 +46,7 @@ class QuestCard extends StatelessWidget {
     final showProgress = quest.progressPercentage > 0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -56,106 +57,116 @@ class QuestCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.13),
-            blurRadius: 7,
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _CheckBox(isCompleted: quest.isCompleted),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  quest.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF1E1E1E),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  quest.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF777777),
-                    fontSize: 10,
-                    height: 1.25,
-                  ),
-                ),
-                if (showProgress) ...[
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 6,
-                            backgroundColor:
-                                const Color(0xFFED1E28).withOpacity(0.28),
-                            valueColor: const AlwaysStoppedAnimation(
-                              Color(0xFFED1E28),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CheckBox(isCompleted: quest.isCompleted),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            quest.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF1E1E1E),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${quest.progressPercentage}%',
-                        style: const TextStyle(
-                          color: Color(0xFF1E88FF),
-                          fontSize: 9,
+                        const SizedBox(width: 8),
+                        _DifficultyBadge(
+                          label: difficultyLabel,
+                          backgroundColor: difficultyColor,
+                          textColor: difficultyTextColor,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 9),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star,
-                      color: Color(0xFFFFA000),
-                      size: 11,
+                      ],
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(height: 8),
                     Text(
-                      '+${quest.xpReward} XP',
+                      quest.description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFFFA000),
+                        color: Color(0xFF777777),
                         fontSize: 10,
+                        height: 1.2,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-            decoration: BoxDecoration(
-              color: difficultyColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              difficultyLabel,
-              style: TextStyle(
-                color: difficultyTextColor,
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
               ),
+            ],
+          ),
+          if (showProgress) ...[
+            const SizedBox(height: 13),
+            Padding(
+              padding: const EdgeInsets.only(left: 44),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 7,
+                        backgroundColor:
+                            const Color(0xFFED1E28).withValues(alpha: 0.25),
+                        valueColor: const AlwaysStoppedAnimation(
+                          Color(0xFFED1E28),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${quest.progressPercentage}%',
+                    style: const TextStyle(
+                      color: Color(0xFF1E88FF),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 44),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.star,
+                  color: Color(0xFFFFA000),
+                  size: 12,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  '+${quest.xpReward} XP',
+                  style: const TextStyle(
+                    color: Color(0xFFFFA000),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -174,23 +185,62 @@ class _CheckBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 26,
-      height: 26,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         color: isCompleted ? const Color(0xFF04C46B) : Colors.white,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color:
               isCompleted ? const Color(0xFF04C46B) : const Color(0xFFED1E28),
+          width: 1,
         ),
       ),
       child: isCompleted
           ? const Icon(
               Icons.check,
               color: Colors.white,
-              size: 16,
+              size: 17,
             )
           : null,
+    );
+  }
+}
+
+class _DifficultyBadge extends StatelessWidget {
+  final String label;
+  final Color backgroundColor;
+  final Color textColor;
+
+  const _DifficultyBadge({
+    required this.label,
+    required this.backgroundColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(
+        minWidth: 60,
+      ),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

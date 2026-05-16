@@ -35,9 +35,9 @@ class _QuestPageState extends State<QuestPage> {
       body: Column(
         children: [
           HeaderBackground(
-            height: 305,
+            height: HeaderBackground.quizQuestHeight,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 60, 28, 14),
+              padding: const EdgeInsets.fromLTRB(24, 42, 24, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -173,8 +173,10 @@ class _QuestPageState extends State<QuestPage> {
                     : ListView(
                         padding: EdgeInsets.zero,
                         children: [
-                          const _StreakSection(),
-                          const SizedBox(height: 16),
+                          _StreakSection(
+                            streak: vm.currentStreak,
+                          ),
+                          const SizedBox(height: 13),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             child: quests.isEmpty
@@ -319,19 +321,31 @@ class _HeaderQuestTabButton extends StatelessWidget {
 }
 
 class _StreakSection extends StatelessWidget {
-  const _StreakSection();
+  final int streak;
+
+  const _StreakSection({
+    required this.streak,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 76,
-      padding: const EdgeInsets.symmetric(horizontal: 42),
-      color: Colors.white,
+      height: 96,
+      padding: const EdgeInsets.fromLTRB(42, 0, 42, 0),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFE6E6E6),
+            width: 1,
+          ),
+        ),
+      ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: const Color(0xFFFF6813),
               borderRadius: BorderRadius.circular(5),
@@ -339,11 +353,11 @@ class _StreakSection extends StatelessWidget {
             child: const Icon(
               Icons.local_fire_department_outlined,
               color: Colors.white,
-              size: 27,
+              size: 31,
             ),
           ),
-          const SizedBox(width: 14),
-          const Expanded(
+          const SizedBox(width: 17),
+          Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,26 +366,28 @@ class _StreakSection extends StatelessWidget {
                   'Streak Kamu',
                   style: TextStyle(
                     color: Color(0xFFED1E28),
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 5),
                 Text(
-                  '7 hari berturut-turut',
+                  '$streak hari berturut-turut',
                   style: TextStyle(
                     color: Color(0xFFED1E28),
-                    fontSize: 11,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
             ),
           ),
-          Text(
+          const Text(
             'Teruskan!',
             style: TextStyle(
               color: Color(0xFFED1E28),
-              fontSize: 10,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],

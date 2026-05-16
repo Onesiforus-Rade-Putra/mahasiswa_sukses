@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 class HeaderBackground extends StatelessWidget {
+  static const double defaultHeight = 280;
+  static const double quizQuestHeight = 270;
+
   final double height;
   final Widget? child;
 
   const HeaderBackground({
     super.key,
-    this.height = 280,
+    this.height = defaultHeight,
     this.child,
   });
 

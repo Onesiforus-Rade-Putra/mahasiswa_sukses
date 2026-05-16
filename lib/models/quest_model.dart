@@ -19,13 +19,33 @@ class QuestModel {
 
   factory QuestModel.fromJson(Map<String, dynamic> json) {
     return QuestModel(
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      frequency: json['frequency'] ?? '',
-      xpReward: json['xp_reward'] ?? 0,
-      difficulty: json['difficulty'] ?? 'easy',
-      progressPercentage: json['progress_percentage'] ?? 0,
-      isCompleted: json['is_completed'] ?? false,
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      frequency: json['frequency']?.toString() ??
+          json['type']?.toString() ??
+          json['quest_type']?.toString() ??
+          '',
+      xpReward: _toInt(
+        json['xp_reward'] ?? json['xpReward'] ?? json['xp'] ?? 0,
+      ),
+      difficulty: json['difficulty']?.toString() ?? 'easy',
+      progressPercentage: _toInt(
+        json['progress_percentage'] ??
+            json['progressPercentage'] ??
+            json['progress'] ??
+            0,
+      ),
+      isCompleted: json['is_completed'] ??
+          json['isCompleted'] ??
+          json['completed'] ??
+          false,
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }

@@ -13,7 +13,10 @@ class QuizService {
 
   Future<String> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+
+    final token = prefs.getString('token') ??
+        prefs.getString('accessToken') ??
+        prefs.getString('access_token');
 
     if (token == null || token.isEmpty) {
       throw Exception('Token tidak ditemukan. Silakan login ulang.');
@@ -40,22 +43,43 @@ class QuizService {
       headers: await _headers(),
     );
 
+    debugPrint('GET QUIZZES URL: $url');
     debugPrint('GET QUIZZES STATUS: ${response.statusCode}');
     debugPrint('GET QUIZZES BODY: ${response.body}');
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
 
-      if (data is List) {
-        return data
-            .map((item) => QuizModel.fromJson(item as Map<String, dynamic>))
-            .toList();
+      final List data;
+
+      if (decoded is List) {
+        data = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        if (decoded['data'] is List) {
+          data = decoded['data'];
+        } else if (decoded['quizzes'] is List) {
+          data = decoded['quizzes'];
+        } else if (decoded['data'] is Map<String, dynamic> &&
+            decoded['data']['quizzes'] is List) {
+          data = decoded['data']['quizzes'];
+        } else {
+          throw Exception('Format data quiz tidak valid');
+        }
+      } else {
+        throw Exception('Format response quiz tidak valid');
       }
 
-      throw Exception('Format data quiz tidak valid');
+      return data
+          .map((item) => QuizModel.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
 
-    throw Exception('Gagal mengambil daftar quiz');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception(
+        'Gagal mengambil daftar quiz. Status: ${response.statusCode}');
   }
 
   Future<QuizAttemptModel> startQuiz(int quizId) async {
