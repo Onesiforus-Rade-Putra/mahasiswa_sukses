@@ -55,6 +55,9 @@ class LoginViewModel extends ChangeNotifier {
       await prefs.setString('token', accessToken!);
       await prefs.setString('access_token', accessToken!);
 
+      await prefs.setString('current_login_identifier', identifier);
+      await prefs.setString('username', identifier);
+
       if (refreshToken != null && refreshToken!.isNotEmpty) {
         await prefs.setString('refresh_token', refreshToken!);
       }

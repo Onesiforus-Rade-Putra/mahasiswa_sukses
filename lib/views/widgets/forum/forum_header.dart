@@ -13,7 +13,7 @@ class ForumHeader extends StatelessWidget {
     this.showBackButton = false,
     this.height = 222,
     this.title = 'Community',
-    this.subtitle = '1,234 mahasiswa online',
+    this.subtitle = '0 mahasiswa online',
     this.onBackTap,
     this.onAddTap,
   });

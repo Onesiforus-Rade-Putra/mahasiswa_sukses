@@ -25,7 +25,7 @@ class _CreatePostDialogState extends State<CreatePostDialog> {
   String selectedCategory = 'Umum';
   bool isLoading = false;
 
-  final categories = ['Umum', 'Tips & trik', 'Bantuan'];
+  final categories = ['Umum', 'Tips & Trik', 'Bantuan'];
 
   @override
   void dispose() {
@@ -122,7 +122,7 @@ class _CreatePostDialogState extends State<CreatePostDialog> {
               const SizedBox(height: 8),
               _InputField(
                 controller: titleController,
-                hintText: 'Contoh : bagaimana cara mendapatkan setifikat',
+                hintText: 'Contoh : bagaimana cara mendapatkan sertifikat',
               ),
               const SizedBox(height: 17),
               _Label('Kategori'),
@@ -178,7 +178,7 @@ class _CreatePostDialogState extends State<CreatePostDialog> {
                 maxLines: 5,
               ),
               const SizedBox(height: 17),
-              _Label('Hashtage'),
+              _Label('Hashtag'),
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,

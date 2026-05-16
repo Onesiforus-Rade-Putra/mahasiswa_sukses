@@ -3,14 +3,21 @@ import '../../../models/forum/forum_post_model.dart';
 
 class ForumPostCard extends StatelessWidget {
   final ForumPostModel post;
+  final VoidCallback? onLikeTap;
+  final VoidCallback? onCommentTap;
 
   const ForumPostCard({
     super.key,
     required this.post,
+    this.onLikeTap,
+    this.onCommentTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final likeColor =
+        post.isLiked ? const Color(0xFFF91D2F) : const Color(0xFF666666);
+
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 14, 24, 6),
       padding: const EdgeInsets.fromLTRB(25, 18, 16, 16),
@@ -98,23 +105,63 @@ class ForumPostCard extends StatelessWidget {
           const SizedBox(height: 15),
           Row(
             children: [
-              const Icon(Icons.thumb_up_alt_outlined, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                '${post.likes}',
-                style: const TextStyle(
-                  color: Color(0xFF666666),
-                  fontSize: 10,
+              InkWell(
+                onTap: onLikeTap,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 3,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        post.isLiked
+                            ? Icons.thumb_up_alt
+                            : Icons.thumb_up_alt_outlined,
+                        size: 14,
+                        color: likeColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${post.likes}',
+                        style: TextStyle(
+                          color: likeColor,
+                          fontSize: 10,
+                          fontWeight:
+                              post.isLiked ? FontWeight.w700 : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 18),
-              const Icon(Icons.chat_bubble_outline, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                '${post.comments} Komentar',
-                style: const TextStyle(
-                  color: Color(0xFF666666),
-                  fontSize: 10,
+              InkWell(
+                onTap: onCommentTap,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 3,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.chat_bubble_outline,
+                        size: 14,
+                        color: Color(0xFF222222),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${post.comments} Komentar',
+                        style: const TextStyle(
+                          color: Color(0xFF666666),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

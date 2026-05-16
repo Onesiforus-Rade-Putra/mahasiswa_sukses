@@ -81,15 +81,15 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
               const SizedBox(height: 8),
               _InputField(
                 controller: titleController,
-                hintText: 'Contoh : Study Group : Algoritma pemograman',
+                hintText: 'Contoh : Study Group : Algoritma pemrograman',
               ),
               const SizedBox(height: 17),
-              _Label('Isi postingan'),
+              _Label('Deskripsi ruang belajar'),
               const SizedBox(height: 8),
               _InputField(
                 controller: descriptionController,
                 hintText:
-                    'Jelaskan topik yang akan di bahas di\nruang belajar ini...',
+                    'Jelaskan topik yang akan dibahas di\nruang belajar ini...',
                 height: 95,
                 maxLines: 4,
               ),

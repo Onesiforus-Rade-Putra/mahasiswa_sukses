@@ -7,11 +7,17 @@ import '../widgets/forum/chat_bubble.dart';
 class StudyRoomChatPage extends StatelessWidget {
   final int roomId;
   final String roomTitle;
+  final int currentParticipants;
+  final int maxParticipants;
+  final bool isActive;
 
   const StudyRoomChatPage({
     super.key,
     required this.roomId,
     required this.roomTitle,
+    required this.currentParticipants,
+    required this.maxParticipants,
+    required this.isActive,
   });
 
   @override
@@ -21,6 +27,9 @@ class StudyRoomChatPage extends StatelessWidget {
       child: _StudyRoomChatPageContent(
         roomId: roomId,
         roomTitle: roomTitle,
+        currentParticipants: currentParticipants,
+        maxParticipants: maxParticipants,
+        isActive: isActive,
       ),
     );
   }
@@ -29,10 +38,16 @@ class StudyRoomChatPage extends StatelessWidget {
 class _StudyRoomChatPageContent extends StatelessWidget {
   final int roomId;
   final String roomTitle;
+  final int currentParticipants;
+  final int maxParticipants;
+  final bool isActive;
 
   const _StudyRoomChatPageContent({
     required this.roomId,
     required this.roomTitle,
+    required this.currentParticipants,
+    required this.maxParticipants,
+    required this.isActive,
   });
 
   @override
@@ -48,7 +63,58 @@ class _StudyRoomChatPageContent extends StatelessWidget {
           children: [
             _ChatHeader(
               title: roomTitle,
+              currentParticipants: currentParticipants,
+              maxParticipants: maxParticipants,
+              isActive: isActive,
               onBackTap: () => Navigator.pop(context),
+              onLeaveTap: () async {
+                final shouldLeave = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Keluar ruang belajar?'),
+                    content: const Text(
+                      'Kamu akan keluar dari ruang belajar ini.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          'Keluar',
+                          style: TextStyle(
+                            color: Color(0xFFF91D2F),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldLeave != true) return;
+                if (!context.mounted) return;
+
+                final forumVM = context.read<ForumViewModel>();
+                final success = await forumVM.leaveRoom(roomId);
+
+                if (!context.mounted) return;
+
+                if (success) {
+                  Navigator.pop(context, true);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        forumVM.errorMessage ??
+                            'Gagal keluar dari ruang belajar',
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
             Expanded(
               child: forumVM.isLoading
@@ -67,15 +133,40 @@ class _StudyRoomChatPageContent extends StatelessWidget {
                             ),
                           ),
                         )
-                      : ListView.builder(
-                          reverse: true,
-                          padding: const EdgeInsets.fromLTRB(23, 22, 23, 18),
-                          itemCount: forumVM.chatMessages.length,
-                          itemBuilder: (context, index) {
-                            final message = forumVM.chatMessages[index];
-                            return ChatBubble(message: message);
-                          },
-                        ),
+                      : forumVM.chatMessages.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Belum ada pesan',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF777777),
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              reverse: true,
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              padding: const EdgeInsets.fromLTRB(
+                                23,
+                                22,
+                                23,
+                                100,
+                              ),
+                              itemCount: forumVM.chatMessages.length,
+                              itemBuilder: (context, index) {
+                                final message = forumVM.chatMessages[index];
+                                return ChatBubble(
+                                  message: message,
+                                  onLikeTap: () {
+                                    forumVM.toggleRoomChatLike(
+                                      roomId: roomId,
+                                      roomMessageId: message.id,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
             ),
             _ChatInputBar(
               roomId: roomId,
@@ -89,11 +180,19 @@ class _StudyRoomChatPageContent extends StatelessWidget {
 
 class _ChatHeader extends StatelessWidget {
   final String title;
+  final int currentParticipants;
+  final int maxParticipants;
+  final bool isActive;
   final VoidCallback onBackTap;
+  final VoidCallback onLeaveTap;
 
   const _ChatHeader({
     required this.title,
+    required this.currentParticipants,
+    required this.maxParticipants,
+    required this.isActive,
     required this.onBackTap,
+    required this.onLeaveTap,
   });
 
   @override
@@ -115,21 +214,49 @@ class _ChatHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: onBackTap,
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 1.2),
-                borderRadius: BorderRadius.circular(9),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: onBackTap,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 1.2,
+                    ),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.arrow_back,
-                color: Colors.white,
-                size: 18,
+              GestureDetector(
+                onTap: onLeaveTap,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 1.2,
+                    ),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(
+                    Icons.logout,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
           const SizedBox(height: 15),
           Text(
@@ -146,9 +273,9 @@ class _ChatHeader extends StatelessWidget {
           const Spacer(),
           Row(
             children: [
-              const _HeaderBadge(
+              _HeaderBadge(
                 icon: Icons.groups_outlined,
-                label: '15 / 20 Peserta',
+                label: '$currentParticipants / $maxParticipants Peserta',
               ),
               const SizedBox(width: 8),
               Container(
@@ -159,16 +286,16 @@ class _ChatHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(7),
                   border: Border.all(color: Colors.white),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 4,
                       backgroundColor: Color(0xFF34C759),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(
-                      'Aktif',
-                      style: TextStyle(
+                      isActive ? 'Aktif' : 'Tidak Aktif',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -284,9 +411,15 @@ class _ChatInputBarState extends State<_ChatInputBar> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Container(
-      height: 73,
-      padding: const EdgeInsets.fromLTRB(23, 9, 23, 12),
+      padding: EdgeInsets.fromLTRB(
+        23,
+        9,
+        23,
+        bottomPadding > 0 ? bottomPadding : 12,
+      ),
       decoration: const BoxDecoration(
         color: Color(0xFFF91D2F),
       ),
@@ -308,7 +441,10 @@ class _ChatInputBarState extends State<_ChatInputBar> {
           const SizedBox(width: 8),
           Expanded(
             child: Container(
-              height: 38,
+              constraints: const BoxConstraints(
+                minHeight: 38,
+                maxHeight: 82,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -320,9 +456,10 @@ class _ChatInputBarState extends State<_ChatInputBar> {
                     child: TextField(
                       controller: messageController,
                       minLines: 1,
-                      maxLines: 1,
+                      maxLines: 3,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _sendMessage(),
+                      cursorColor: const Color(0xFFF91D2F),
                       decoration: const InputDecoration(
                         hintText: 'Tulis pesan...',
                         hintStyle: TextStyle(
@@ -331,7 +468,7 @@ class _ChatInputBarState extends State<_ChatInputBar> {
                         ),
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: EdgeInsets.zero,
+                        contentPadding: EdgeInsets.symmetric(vertical: 9),
                       ),
                       style: const TextStyle(
                         color: Color(0xFF222222),

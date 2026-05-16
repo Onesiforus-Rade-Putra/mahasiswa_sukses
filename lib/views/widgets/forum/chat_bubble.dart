@@ -4,243 +4,178 @@ import '../../../models/forum/chat_message_model.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessageModel message;
+  final bool? isMine;
+  final VoidCallback? onLikeTap;
 
   const ChatBubble({
     super.key,
     required this.message,
+    this.isMine,
+    this.onLikeTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (message.isMe) {
-      return _MyChatBubble(message: message);
-    }
+    final mine = isMine ?? message.isMe;
 
-    return _OtherChatBubble(message: message);
-  }
-}
-
-class _OtherChatBubble extends StatelessWidget {
-  final ChatMessageModel message;
-
-  const _OtherChatBubble({
-    required this.message,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final avatarColor = message.senderInitial == 'SA'
-        ? const Color(0xFF2F80ED)
-        : const Color(0xFFFF1D35);
+    final bubbleColor = mine ? const Color(0xFFF91D2F) : Colors.white;
+    final textColor = mine ? Colors.white : const Color(0xFF222222);
+    final likeColor =
+        message.isLiked ? const Color(0xFFF91D2F) : Colors.grey.shade500;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 22),
       child: Row(
+        mainAxisAlignment:
+            mine ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: avatarColor,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Text(
-              message.senderInitial,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
+          if (!mine) ...[
+            _Avatar(initial: message.senderInitial),
+            const SizedBox(width: 14),
+          ],
+          Flexible(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      message.senderName,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF222222),
-                      ),
-                    ),
-                    if (message.isAdmin) ...[
-                      const SizedBox(width: 5),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF1D35),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'Admin',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    if (!mine) ...[
+                      Text(
+                        message.senderName,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E1E1E),
                         ),
                       ),
+                      const SizedBox(width: 8),
                     ],
-                    const SizedBox(width: 8),
                     Text(
                       message.time,
                       style: const TextStyle(
-                        color: Color(0xFF777777),
                         fontSize: 11,
+                        color: Color(0xFF8F8F8F),
                       ),
                     ),
+                    if (mine) ...[
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Anda',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFF91D2F),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Container(
-                  constraints: const BoxConstraints(
-                    maxWidth: 220,
-                  ),
+                  constraints: const BoxConstraints(maxWidth: 245),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 11,
+                    horizontal: 18,
+                    vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
+                    color: bubbleColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(mine ? 16 : 4),
+                      bottomRight: Radius.circular(mine ? 4 : 16),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.16),
-                        blurRadius: 6,
+                        color: Colors.black.withOpacity(0.10),
+                        blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: Text(
                     message.message,
-                    style: const TextStyle(
-                      color: Color(0xFF222222),
-                      fontSize: 12,
-                      height: 1.45,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 13,
+                      height: 1.4,
                     ),
                   ),
                 ),
-                const SizedBox(height: 7),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.thumb_up_alt_outlined,
-                      size: 14,
-                      color: Color(0xFF9A9A9A),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: onLikeTap,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 2,
+                      vertical: 4,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${message.likes}',
-                      style: const TextStyle(
-                        color: Color(0xFF888888),
-                        fontSize: 10,
-                      ),
-                    ),
-                    if (message.replies > 0) ...[
-                      const SizedBox(width: 12),
-                      const Icon(
-                        Icons.reply,
-                        size: 14,
-                        color: Color(0xFF9A9A9A),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${message.replies} balasan',
-                        style: const TextStyle(
-                          color: Color(0xFF888888),
-                          fontSize: 10,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          message.isLiked
+                              ? Icons.thumb_up_alt
+                              : Icons.thumb_up_alt_outlined,
+                          size: 16,
+                          color: likeColor,
                         ),
-                      ),
-                    ],
-                  ],
+                        const SizedBox(width: 4),
+                        Text(
+                          '${message.likes}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: likeColor,
+                            fontWeight: message.isLiked
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
+          if (mine) ...[
+            const SizedBox(width: 14),
+            _Avatar(initial: message.senderInitial),
+          ],
         ],
       ),
     );
   }
 }
 
-class _MyChatBubble extends StatelessWidget {
-  final ChatMessageModel message;
+class _Avatar extends StatelessWidget {
+  final String initial;
 
-  const _MyChatBubble({
-    required this.message,
+  const _Avatar({
+    required this.initial,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4, bottom: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  message.time,
-                  style: const TextStyle(
-                    color: Color(0xFF777777),
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Anda',
-                  style: TextStyle(
-                    color: Color(0xFFFF1D35),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            constraints: const BoxConstraints(
-              maxWidth: 260,
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 11,
-            ),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFF1D35),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-                bottomLeft: Radius.circular(16),
-              ),
-            ),
-            child: Text(
-              message.message,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                height: 1.45,
-              ),
-            ),
-          ),
-        ],
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFF2838),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initial.isNotEmpty ? initial : 'U',
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          fontSize: 24,
+        ),
       ),
     );
   }

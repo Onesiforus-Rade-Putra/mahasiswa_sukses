@@ -6,8 +6,13 @@ class ChatMessageModel {
   final String time;
   final bool isMe;
   final bool isAdmin;
+  final bool isLiked;
   final int likes;
   final int replies;
+
+  final String authorId;
+  final String authorUsername;
+  final String authorFullName;
 
   ChatMessageModel({
     required this.id,
@@ -16,33 +21,64 @@ class ChatMessageModel {
     required this.message,
     required this.time,
     required this.isMe,
+    required this.authorId,
+    required this.authorUsername,
+    required this.authorFullName,
     this.isAdmin = false,
+    this.isLiked = false,
     this.likes = 0,
     this.replies = 0,
   });
 
-  factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
-    final author = json['author'] as Map<String, dynamic>?;
-    final fullName = author?['full_name']?.toString() ?? 'User';
+  factory ChatMessageModel.fromJson(
+    Map<String, dynamic> json, {
+    String? currentUsername,
+    String? currentUserId,
+  }) {
+    final author = json['author'] is Map<String, dynamic>
+        ? json['author'] as Map<String, dynamic>
+        : <String, dynamic>{};
 
-    final content = _readMessageText(json);
+    final authorId = author['id']?.toString() ?? '';
+    final authorUsername = author['username']?.toString() ?? '';
+    final authorFullName = author['full_name']?.toString() ?? 'User';
+
+    final cleanCurrentUsername = currentUsername?.toLowerCase().trim() ?? '';
+    final cleanCurrentUserId = currentUserId?.trim() ?? '';
+
+    final isMineById = cleanCurrentUserId.isNotEmpty &&
+        authorId.isNotEmpty &&
+        authorId == cleanCurrentUserId;
+
+    final isMineByUsername = cleanCurrentUsername.isNotEmpty &&
+        authorUsername.toLowerCase().trim() == cleanCurrentUsername;
+
+    final isMineByFullName = cleanCurrentUsername.isNotEmpty &&
+        authorFullName.toLowerCase().trim() == cleanCurrentUsername;
 
     return ChatMessageModel(
-      id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
-      senderName: fullName,
-      senderInitial: _getInitial(fullName),
-      message: content,
+      id: _toInt(json['id']),
+      senderName: authorFullName,
+      senderInitial: _getInitial(authorFullName),
+      message: _readMessageText(json),
       time: _formatTime(json['created_at']?.toString()),
-
-      // sementara pakai nama login kamu agar chat sendiri muncul kanan
       isMe: json['is_me'] == true ||
-          fullName.toLowerCase().trim() == 'putra' ||
-          fullName.toLowerCase().trim() == 'athallah',
-
+          isMineById ||
+          isMineByUsername ||
+          isMineByFullName,
       isAdmin: json['is_admin'] == true,
-      likes: json['likes_count'] is int ? json['likes_count'] : 0,
-      replies: json['replies_count'] is int ? json['replies_count'] : 0,
+      isLiked: json['is_liked'] == true,
+      likes: _toInt(json['likes_count']),
+      replies: _toInt(json['reply_count'] ?? json['replies_count']),
+      authorId: authorId,
+      authorUsername: authorUsername,
+      authorFullName: authorFullName,
     );
+  }
+
+  static int _toInt(dynamic value, {int defaultValue = 0}) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '') ?? defaultValue;
   }
 
   static String _readMessageText(Map<String, dynamic> json) {
@@ -62,7 +98,7 @@ class ChatMessageModel {
     final words = name.trim().split(' ');
 
     if (words.isEmpty || words.first.isEmpty) {
-      return 'US';
+      return 'U';
     }
 
     if (words.length == 1) {

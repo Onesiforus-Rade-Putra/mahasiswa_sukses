@@ -7,6 +7,7 @@ import '../widgets/forum/forum_segment_tab.dart';
 import '../widgets/forum/forum_category_filter.dart';
 import '../widgets/forum/forum_post_card.dart';
 import 'forum_study_room_page.dart';
+import 'forum_post_detail_page.dart';
 
 class ForumPage extends StatelessWidget {
   const ForumPage({super.key});
@@ -40,6 +41,7 @@ class _ForumPageContent extends StatelessWidget {
                   children: [
                     ForumHeader(
                       showBackButton: false,
+                      subtitle: forumVM.onlineText,
                       onAddTap: () async {
                         final result = await showDialog<bool>(
                           context: context,
@@ -110,20 +112,90 @@ class _ForumPageContent extends StatelessWidget {
                           ),
                         )
                       : forumVM.errorMessage != null
-                          ? Center(
-                              child: Text(
-                                forumVM.errorMessage!,
-                                textAlign: TextAlign.center,
+                          ? RefreshIndicator(
+                              color: const Color(0xFFF91D2F),
+                              onRefresh: () async {
+                                await forumVM.fetchCommunityStats();
+                                await forumVM.fetchForumFeed();
+                              },
+                              child: ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding:
+                                    const EdgeInsets.fromLTRB(24, 120, 24, 150),
+                                children: [
+                                  Center(
+                                    child: Text(
+                                      forumVM.errorMessage!,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF777777),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             )
-                          : ListView.builder(
-                              padding: const EdgeInsets.only(bottom: 105),
-                              itemCount: forumVM.filteredPosts.length,
-                              itemBuilder: (context, index) {
-                                final post = forumVM.filteredPosts[index];
-                                return ForumPostCard(post: post);
-                              },
-                            ),
+                          : forumVM.filteredPosts.isEmpty
+                              ? RefreshIndicator(
+                                  color: const Color(0xFFF91D2F),
+                                  onRefresh: () async {
+                                    await forumVM.fetchCommunityStats();
+                                    await forumVM.fetchForumFeed();
+                                  },
+                                  child: ListView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(
+                                        24, 120, 24, 150),
+                                    children: const [
+                                      Center(
+                                        child: Text(
+                                          'Belum ada postingan',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Color(0xFF777777),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : RefreshIndicator(
+                                  color: const Color(0xFFF91D2F),
+                                  onRefresh: () async {
+                                    await forumVM.fetchCommunityStats();
+                                    await forumVM.fetchForumFeed();
+                                  },
+                                  child: ListView.builder(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.only(bottom: 150),
+                                    itemCount: forumVM.filteredPosts.length,
+                                    itemBuilder: (context, index) {
+                                      final post = forumVM.filteredPosts[index];
+                                      return ForumPostCard(
+                                        post: post,
+                                        onLikeTap: forumVM.isActionLoading
+                                            ? null
+                                            : () {
+                                                forumVM.togglePostLike(post.id);
+                                              },
+                                        onCommentTap: () async {
+                                          await Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  ForumPostDetailPage(
+                                                      post: post),
+                                            ),
+                                          );
+
+                                          await forumVM.fetchForumFeed();
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
                 ),
               ],
             ),

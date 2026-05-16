@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mahasiswa_sukses/viewmodels/quiz_viewmodel.dart';
 import 'package:mahasiswa_sukses/views/widgets/header_background.dart';
 import 'package:mahasiswa_sukses/views/quiz/quiz_card.dart';
-import 'package:mahasiswa_sukses/views/quiz/quest_card.dart';
-import 'quest_page.dart';
+import 'package:mahasiswa_sukses/views/quiz/quest_page.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});

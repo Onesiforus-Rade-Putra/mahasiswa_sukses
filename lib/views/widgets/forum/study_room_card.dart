@@ -5,15 +5,20 @@ import '../../../models/forum/study_room_model.dart';
 class StudyRoomCard extends StatelessWidget {
   final StudyRoomModel room;
   final VoidCallback onJoinTap;
+  final VoidCallback? onLikeTap;
 
   const StudyRoomCard({
     super.key,
     required this.room,
     required this.onJoinTap,
+    this.onLikeTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final likeColor =
+        room.isLiked ? const Color(0xFFF91D2F) : const Color(0xFF666666);
+
     return Container(
       margin: const EdgeInsets.fromLTRB(26, 12, 26, 6),
       padding: const EdgeInsets.fromLTRB(25, 18, 25, 15),
@@ -120,9 +125,9 @@ class StudyRoomCard extends StatelessWidget {
                       color: const Color(0xFFF91D2F),
                       borderRadius: BorderRadius.circular(3),
                     ),
-                    child: const Text(
-                      'Join',
-                      style: TextStyle(
+                    child: Text(
+                      room.isJoined ? 'Masuk' : 'Join',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -141,13 +146,35 @@ class StudyRoomCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.thumb_up_alt_outlined, size: 14),
-              const SizedBox(width: 4),
-              Text(
-                '${room.likes}',
-                style: const TextStyle(
-                  color: Color(0xFF666666),
-                  fontSize: 10,
+              InkWell(
+                onTap: onLikeTap,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 3,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        room.isLiked
+                            ? Icons.thumb_up_alt
+                            : Icons.thumb_up_alt_outlined,
+                        size: 14,
+                        color: likeColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${room.likes}',
+                        style: TextStyle(
+                          color: likeColor,
+                          fontSize: 10,
+                          fontWeight:
+                              room.isLiked ? FontWeight.w700 : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
