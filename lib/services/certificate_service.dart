@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -12,7 +13,10 @@ class CertificateService {
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
+
+    return prefs.getString('token') ??
+        prefs.getString('accessToken') ??
+        prefs.getString('access_token');
   }
 
   Future<Map<String, String>> _headers({bool isJson = true}) async {
@@ -25,7 +29,24 @@ class CertificateService {
     };
   }
 
-  /// 1. Generate certificate dari quiz yang lulus
+  Map<String, dynamic> _decodeMap(String body) {
+    final decoded = jsonDecode(body);
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    throw Exception('Format response sertifikat tidak valid');
+  }
+
+  Map<String, dynamic> _unwrapData(Map<String, dynamic> decoded) {
+    if (decoded['data'] is Map<String, dynamic>) {
+      return decoded['data'] as Map<String, dynamic>;
+    }
+
+    return decoded;
+  }
+
   Future<String> generateCertificate(String quizId) async {
     final url = Uri.parse('$baseUrl/api/v1/quiz/$quizId/certificate');
 
@@ -34,18 +55,32 @@ class CertificateService {
       headers: await _headers(),
     );
 
+    debugPrint('GENERATE CERTIFICATE URL: $url');
     debugPrint('GENERATE CERTIFICATE STATUS: ${response.statusCode}');
     debugPrint('GENERATE CERTIFICATE BODY: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      return data['certificate_id'] ?? '';
+      final decoded = _decodeMap(response.body);
+      final data = _unwrapData(decoded);
+
+      final certificateId = data['certificate_id']?.toString() ??
+          data['certificateId']?.toString();
+
+      if (certificateId == null || certificateId.isEmpty) {
+        throw Exception('Certificate ID tidak ditemukan');
+      }
+
+      return certificateId;
     }
 
-    throw Exception('Gagal generate sertifikat');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception(
+        'Gagal generate sertifikat. Status: ${response.statusCode}');
   }
 
-  /// 2. Ambil list sertifikat user
   Future<List<CertificateModel>> getCertificates() async {
     final url = Uri.parse('$baseUrl/api/v1/certificate/list');
 
@@ -54,20 +89,50 @@ class CertificateService {
       headers: await _headers(),
     );
 
+    debugPrint('GET CERTIFICATE LIST URL: $url');
     debugPrint('GET CERTIFICATE LIST STATUS: ${response.statusCode}');
     debugPrint('GET CERTIFICATE LIST BODY: ${response.body}');
 
     if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      return data.map((e) => CertificateModel.fromJson(e)).toList();
+      final decoded = jsonDecode(response.body);
+
+      final List data;
+
+      if (decoded is List) {
+        data = decoded;
+      } else if (decoded is Map<String, dynamic>) {
+        if (decoded['data'] is List) {
+          data = decoded['data'];
+        } else if (decoded['certificates'] is List) {
+          data = decoded['certificates'];
+        } else if (decoded['data'] is Map<String, dynamic> &&
+            decoded['data']['certificates'] is List) {
+          data = decoded['data']['certificates'];
+        } else {
+          throw Exception('Format data sertifikat tidak valid');
+        }
+      } else {
+        throw Exception('Format response sertifikat tidak valid');
+      }
+
+      return data
+          .map(
+              (item) => CertificateModel.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
 
-    throw Exception('Gagal mengambil daftar sertifikat');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception(
+        'Gagal mengambil daftar sertifikat. Status: ${response.statusCode}');
   }
 
-  /// 3. Download PDF sertifikat
   Future<File> downloadCertificate(
-      String certificateId, String fileName) async {
+    String certificateId,
+    String fileName,
+  ) async {
     final url = Uri.parse('$baseUrl/api/v1/certificate/$certificateId');
 
     final response = await http.get(
@@ -75,7 +140,10 @@ class CertificateService {
       headers: await _headers(isJson: false),
     );
 
+    debugPrint('DOWNLOAD CERTIFICATE URL: $url');
     debugPrint('DOWNLOAD CERTIFICATE STATUS: ${response.statusCode}');
+    debugPrint(
+        'DOWNLOAD CERTIFICATE CONTENT TYPE: ${response.headers['content-type']}');
 
     if (response.statusCode == 200) {
       final dir = await getApplicationDocumentsDirectory();
@@ -86,6 +154,11 @@ class CertificateService {
       return file;
     }
 
-    throw Exception('Gagal download sertifikat');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception(
+        'Gagal download sertifikat. Status: ${response.statusCode}');
   }
 }

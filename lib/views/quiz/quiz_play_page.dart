@@ -4,13 +4,20 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/quiz_viewmodel.dart';
 import 'quiz_result_page.dart';
 
-class QuizPlayPage extends StatelessWidget {
+class QuizPlayPage extends StatefulWidget {
   final int quizId;
 
   const QuizPlayPage({
     super.key,
     required this.quizId,
   });
+
+  @override
+  State<QuizPlayPage> createState() => _QuizPlayPageState();
+}
+
+class _QuizPlayPageState extends State<QuizPlayPage> {
+  bool _hasAutoSubmitted = false;
 
   Future<bool> _showExitDialog(BuildContext context) async {
     final result = await showDialog<bool>(
@@ -44,13 +51,45 @@ class QuizPlayPage extends StatelessWidget {
 
     final progressValue =
         vm.totalQuestions == 0 ? 0.0 : q.currentNumber / vm.totalQuestions;
+    if (vm.remainingSeconds <= 0 &&
+        !_hasAutoSubmitted &&
+        !vm.isQuestionLoading) {
+      _hasAutoSubmitted = true;
 
+      Future.microtask(() async {
+        final success = await context.read<QuizViewModel>().submitQuiz(
+              widget.quizId,
+            );
+
+        if (!context.mounted) return;
+
+        if (success) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => QuizResultPage(
+                quizId: widget.quizId,
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                context.read<QuizViewModel>().errorMessage ??
+                    'Waktu habis, gagal submit quiz',
+              ),
+            ),
+          );
+        }
+      });
+    }
     return WillPopScope(
       onWillPop: () async {
         final shouldExit = await _showExitDialog(context);
 
         if (shouldExit) {
-          await context.read<QuizViewModel>().exitQuizEarly(quizId);
+          await context.read<QuizViewModel>().exitQuizEarly(widget.quizId);
         }
 
         return shouldExit;
@@ -74,7 +113,7 @@ class QuizPlayPage extends StatelessWidget {
                         if (shouldExit) {
                           await context
                               .read<QuizViewModel>()
-                              .exitQuizEarly(quizId);
+                              .exitQuizEarly(widget.quizId);
 
                           if (context.mounted) {
                             Navigator.pop(context);
@@ -106,11 +145,11 @@ class QuizPlayPage extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Text(
-                            '10.00',
-                            style: TextStyle(
+                            vm.formattedRemainingTime,
+                            style: const TextStyle(
                               color: Color(0xFFED1E28),
                               fontSize: 10,
                             ),
@@ -275,7 +314,7 @@ class QuizPlayPage extends StatelessWidget {
                                 : () async {
                                     final isFinished = await context
                                         .read<QuizViewModel>()
-                                        .nextQuestion(quizId);
+                                        .nextQuestion(widget.quizId);
 
                                     if (!context.mounted) return;
 
@@ -284,7 +323,7 @@ class QuizPlayPage extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                           builder: (_) => QuizResultPage(
-                                            quizId: quizId,
+                                            quizId: widget.quizId,
                                           ),
                                         ),
                                       );
@@ -308,9 +347,11 @@ class QuizPlayPage extends StatelessWidget {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text(
-                                    'Selanjutnya',
-                                    style: TextStyle(
+                                : Text(
+                                    vm.isLastQuestion
+                                        ? 'Selesai'
+                                        : 'Selanjutnya',
+                                    style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w800,
                                     ),

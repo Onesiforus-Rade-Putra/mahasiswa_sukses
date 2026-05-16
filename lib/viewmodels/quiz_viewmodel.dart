@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'dart:async';
 import '../models/quiz_model.dart';
 import '../models/quiz_attempt_model.dart';
 import '../models/quiz_question_model.dart';
@@ -14,7 +14,7 @@ class QuizViewModel extends ChangeNotifier {
   bool isLoading = false;
   bool isQuestionLoading = false;
   bool isSummaryLoading = false;
-
+  bool hasLoadedSummary = false;
   String? errorMessage;
 
   List<QuizModel> quizzes = [];
@@ -25,6 +25,9 @@ class QuizViewModel extends ChangeNotifier {
 
   int progress = 0;
   int totalQuestions = 0;
+
+  Timer? _quizTimer;
+  int remainingSeconds = 600;
 
   final Map<String, String> answers = {};
 
@@ -82,10 +85,13 @@ class QuizViewModel extends ChangeNotifier {
       summary = await _homeService.getGamificationSummary(token).timeout(
             const Duration(seconds: 8),
           );
+
+      hasLoadedSummary = true;
     } catch (e) {
       debugPrint('GAMIFICATION SUMMARY ERROR: $e');
 
       summary = const GamificationSummaryModel.empty();
+      hasLoadedSummary = false;
     } finally {
       isSummaryLoading = false;
       notifyListeners();
@@ -104,7 +110,7 @@ class QuizViewModel extends ChangeNotifier {
       currentQuestion = currentAttempt!.firstQuestion;
       totalQuestions = currentAttempt!.totalQuestions;
       progress = currentQuestion!.currentNumber;
-
+      _startTimerFromEndDateTime(currentAttempt!.endDateTime);
       return true;
     } catch (e) {
       errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -125,6 +131,55 @@ class QuizViewModel extends ChangeNotifier {
   String? get selectedAnswer {
     if (currentQuestion == null) return null;
     return answers[currentQuestion!.id.toString()];
+  }
+
+  bool get isLastQuestion {
+    if (currentQuestion == null) return false;
+    if (totalQuestions == 0) return false;
+
+    return currentQuestion!.currentNumber >= totalQuestions;
+  }
+
+  String get formattedRemainingTime {
+    final minutes = remainingSeconds ~/ 60;
+    final seconds = remainingSeconds % 60;
+
+    return '${minutes.toString().padLeft(2, '0')}.${seconds.toString().padLeft(2, '0')}';
+  }
+
+  void _startTimerFromEndDateTime(String endDateTime) {
+    _quizTimer?.cancel();
+
+    DateTime? endTime;
+
+    try {
+      if (endDateTime.isNotEmpty) {
+        endTime = DateTime.parse(endDateTime);
+      }
+    } catch (_) {
+      endTime = null;
+    }
+
+    if (endTime == null) {
+      remainingSeconds = 600;
+    } else {
+      final diff = endTime.difference(DateTime.now()).inSeconds;
+      remainingSeconds = diff > 0 ? diff : 0;
+    }
+
+    _quizTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (remainingSeconds <= 0) {
+        timer.cancel();
+        remainingSeconds = 0;
+        notifyListeners();
+        return;
+      }
+
+      remainingSeconds--;
+      notifyListeners();
+    });
+
+    notifyListeners();
   }
 
   Future<bool> nextQuestion(int quizId) async {
@@ -167,7 +222,7 @@ class QuizViewModel extends ChangeNotifier {
         quizId: quizId,
         answers: answers,
       );
-
+      _quizTimer?.cancel();
       return true;
     } catch (e) {
       errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -181,6 +236,7 @@ class QuizViewModel extends ChangeNotifier {
   Future<void> exitQuizEarly(int quizId) async {
     try {
       await _service.exitQuizEarly(quizId);
+      _quizTimer?.cancel();
     } catch (e) {
       debugPrint(e.toString());
     }
@@ -194,5 +250,11 @@ class QuizViewModel extends ChangeNotifier {
       notifyListeners();
       return null;
     }
+  }
+
+  @override
+  void dispose() {
+    _quizTimer?.cancel();
+    super.dispose();
   }
 }

@@ -16,6 +16,7 @@ class QuestViewModel extends ChangeNotifier {
   final HomeService _homeService = HomeService();
 
   bool isSummaryLoading = false;
+  bool hasLoadedSummary = false;
 
   GamificationSummaryModel summary = const GamificationSummaryModel.empty();
 
@@ -69,10 +70,13 @@ class QuestViewModel extends ChangeNotifier {
       summary = await _homeService.getGamificationSummary(token).timeout(
             const Duration(seconds: 8),
           );
+
+      hasLoadedSummary = true;
     } catch (e) {
       debugPrint('QUEST SUMMARY ERROR: $e');
 
       summary = const GamificationSummaryModel.empty();
+      hasLoadedSummary = false;
     } finally {
       isSummaryLoading = false;
       notifyListeners();

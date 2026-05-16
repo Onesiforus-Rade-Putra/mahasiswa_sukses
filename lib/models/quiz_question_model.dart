@@ -19,13 +19,31 @@ class QuizQuestionModel {
 
   factory QuizQuestionModel.fromJson(Map<String, dynamic> json) {
     return QuizQuestionModel(
-      id: json['id'] ?? 0,
-      currentNumber: json['current_number'] ?? 0,
-      text: json['text'] ?? '',
-      optionA: json['option_a'] ?? '',
-      optionB: json['option_b'] ?? '',
-      optionC: json['option_c'] ?? '',
-      optionD: json['option_d'] ?? '',
+      id: _toInt(json['id'] ?? json['question_id']),
+      currentNumber: _toInt(
+        json['current_number'] ??
+            json['currentNumber'] ??
+            json['question_num'] ??
+            json['number'] ??
+            0,
+      ),
+      text: json['text']?.toString() ?? json['question']?.toString() ?? '',
+      optionA: json['option_a']?.toString() ??
+          json['optionA']?.toString() ??
+          json['a']?.toString() ??
+          '',
+      optionB: json['option_b']?.toString() ??
+          json['optionB']?.toString() ??
+          json['b']?.toString() ??
+          '',
+      optionC: json['option_c']?.toString() ??
+          json['optionC']?.toString() ??
+          json['c']?.toString() ??
+          '',
+      optionD: json['option_d']?.toString() ??
+          json['optionD']?.toString() ??
+          json['d']?.toString() ??
+          '',
     );
   }
 
@@ -37,4 +55,11 @@ class QuizQuestionModel {
       ];
 
   List<String> get optionKeys => ['a', 'b', 'c', 'd'];
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
 }

@@ -4,6 +4,7 @@ import 'package:mahasiswa_sukses/viewmodels/quiz_viewmodel.dart';
 import 'package:mahasiswa_sukses/views/widgets/header_background.dart';
 import 'package:mahasiswa_sukses/views/quiz/quiz_card.dart';
 import 'package:mahasiswa_sukses/views/quiz/quest_page.dart';
+import 'package:mahasiswa_sukses/views/widgets/restore_streak_dialog.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -208,49 +209,61 @@ class _HeaderMainTab extends StatelessWidget {
 
 class _StreakSection extends StatelessWidget {
   final int streak;
+  final bool isBroken;
 
   const _StreakSection({
     required this.streak,
+    required this.isBroken,
   });
 
   @override
   Widget build(BuildContext context) {
+    final iconColor =
+        isBroken ? const Color(0xFF9E9E9E) : const Color(0xFFFF6813);
+
+    final title = isBroken ? 'Streak Kamu Padam!' : 'Streak Kamu';
+    final subtitle = isBroken
+        ? 'Yuk pulihkan streak harianmu'
+        : '$streak hari berturut-turut';
+
     return Container(
       height: 76,
-      padding: const EdgeInsets.symmetric(horizontal: 42),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       color: Colors.white,
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFFFF6813),
+              color: iconColor,
               borderRadius: BorderRadius.circular(5),
             ),
             child: const Icon(
               Icons.local_fire_department_outlined,
               color: Colors.white,
-              size: 27,
+              size: 29,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Streak Kamu',
-                  style: TextStyle(
+                Text(
+                  title,
+                  style: const TextStyle(
                     color: Color(0xFFED1E28),
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$streak hari berturut-turut',
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFFED1E28),
                     fontSize: 11,
@@ -259,13 +272,41 @@ class _StreakSection extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            'Teruskan!',
-            style: TextStyle(
-              color: Color(0xFFED1E28),
-              fontSize: 10,
+          if (isBroken)
+            SizedBox(
+              width: 96,
+              height: 34,
+              child: OutlinedButton(
+                onPressed: () {
+                  showRestoreStreakDialog(context);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFED1E28),
+                  side: const BorderSide(
+                    color: Color(0xFFED1E28),
+                  ),
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Pulihkan!',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            )
+          else
+            const Text(
+              'Teruskan!',
+              style: TextStyle(
+                color: Color(0xFFED1E28),
+                fontSize: 10,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -286,6 +327,9 @@ class _QuizContent extends StatelessWidget {
       children: [
         _StreakSection(
           streak: vm.currentStreak,
+          isBroken: vm.hasLoadedSummary &&
+              !vm.isSummaryLoading &&
+              vm.summary.currentStreak == 0,
         ),
         const SizedBox(height: 10),
         const Padding(

@@ -1,10 +1,10 @@
-import 'dart:io';
-
+import 'quiz_play_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:open_filex/open_filex.dart';
+
 import '../../viewmodels/quiz_viewmodel.dart';
-import '../../viewmodels/certificate_viewmodel.dart';
+
+import 'package:mahasiswa_sukses/views/widgets/certificate_payment.dart';
 
 class QuizResultPage extends StatelessWidget {
   final int quizId;
@@ -150,59 +150,11 @@ class QuizResultPage extends StatelessWidget {
                   width: double.infinity,
                   height: 37,
                   child: ElevatedButton.icon(
-                    onPressed: result.certificateId == null
-                        ? null
-                        : () async {
-                            final certVm = context.read<CertificateViewModel>();
-
-                            String? certificateId = result.certificateId;
-
-                            certificateId ??= await certVm.generateCertificate(
-                              quizId.toString(),
-                            );
-
-                            if (!context.mounted) return;
-
-                            if (certificateId == null ||
-                                certificateId.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    certVm.errorMessage ??
-                                        'Gagal generate sertifikat',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final File? file = await certVm.downloadCertificate(
-                              certificateId: certificateId,
-                              fileName: 'sertifikat_quiz_$quizId',
-                            );
-
-                            if (!context.mounted) return;
-
-                            if (file == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    certVm.errorMessage ??
-                                        'Gagal download sertifikat',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Sertifikat berhasil diunduh'),
-                              ),
-                            );
-
-                            await OpenFilex.open(file.path);
-                          },
+                    onPressed: result.passed
+                        ? () {
+                            showCertificatePaymentDialog(context);
+                          }
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00C853),
                       disabledBackgroundColor: Colors.grey.shade300,
@@ -233,7 +185,24 @@ class QuizResultPage extends StatelessWidget {
                       if (!context.mounted) return;
 
                       if (success) {
-                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => QuizPlayPage(
+                              quizId: quizId,
+                            ),
+                          ),
+                        );
+                      } else {
+                        final errorMessage =
+                            context.read<QuizViewModel>().errorMessage ??
+                                'Gagal memulai ulang quiz';
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(errorMessage),
+                          ),
+                        );
                       }
                     },
                     style: OutlinedButton.styleFrom(

@@ -35,6 +35,24 @@ class QuizService {
     };
   }
 
+  Map<String, dynamic> _decodeMap(String body) {
+    final decoded = jsonDecode(body);
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    throw Exception('Format response tidak valid');
+  }
+
+  Map<String, dynamic> _unwrapData(Map<String, dynamic> decoded) {
+    if (decoded['data'] is Map<String, dynamic>) {
+      return decoded['data'] as Map<String, dynamic>;
+    }
+
+    return decoded;
+  }
+
   Future<List<QuizModel>> getAllQuizzes() async {
     final url = Uri.parse('$baseUrl/api/v1/quiz/');
 
@@ -90,16 +108,22 @@ class QuizService {
       headers: await _headers(),
     );
 
+    debugPrint('START QUIZ URL: $url');
     debugPrint('START QUIZ STATUS: ${response.statusCode}');
     debugPrint('START QUIZ BODY: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return QuizAttemptModel.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
+      final decoded = _decodeMap(response.body);
+      final data = _unwrapData(decoded);
+
+      return QuizAttemptModel.fromJson(data);
     }
 
-    throw Exception('Gagal memulai quiz');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception('Gagal memulai quiz. Status: ${response.statusCode}');
   }
 
   Future<QuizQuestionModel> getQuizQuestion({
@@ -115,16 +139,23 @@ class QuizService {
       headers: await _headers(),
     );
 
+    debugPrint('GET QUESTION URL: $url');
     debugPrint('GET QUESTION STATUS: ${response.statusCode}');
     debugPrint('GET QUESTION BODY: ${response.body}');
 
     if (response.statusCode == 200) {
-      return QuizQuestionModel.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
+      final decoded = _decodeMap(response.body);
+      final data = _unwrapData(decoded);
+
+      return QuizQuestionModel.fromJson(data);
     }
 
-    throw Exception('Gagal mengambil soal quiz');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception(
+        'Gagal mengambil soal quiz. Status: ${response.statusCode}');
   }
 
   Future<QuizResultModel> submitQuiz({
@@ -141,16 +172,23 @@ class QuizService {
       }),
     );
 
+    debugPrint('SUBMIT QUIZ URL: $url');
+    debugPrint('SUBMIT QUIZ ANSWERS: $answers');
     debugPrint('SUBMIT QUIZ STATUS: ${response.statusCode}');
     debugPrint('SUBMIT QUIZ BODY: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return QuizResultModel.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
+      final decoded = _decodeMap(response.body);
+      final data = _unwrapData(decoded);
+
+      return QuizResultModel.fromJson(data);
     }
 
-    throw Exception('Gagal submit quiz');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception('Gagal submit quiz. Status: ${response.statusCode}');
   }
 
   Future<void> exitQuizEarly(int quizId) async {
@@ -179,14 +217,23 @@ class QuizService {
       headers: await _headers(),
     );
 
+    debugPrint('GENERATE CERTIFICATE URL: $url');
     debugPrint('GENERATE CERTIFICATE STATUS: ${response.statusCode}');
     debugPrint('GENERATE CERTIFICATE BODY: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      return data['certificate_id'];
+      final decoded = _decodeMap(response.body);
+      final data = _unwrapData(decoded);
+
+      return data['certificate_id']?.toString() ??
+          data['certificateId']?.toString();
     }
 
-    throw Exception('Gagal generate sertifikat');
+    if (response.statusCode == 401) {
+      throw Exception('Sesi login habis. Silakan login ulang.');
+    }
+
+    throw Exception(
+        'Gagal generate sertifikat. Status: ${response.statusCode}');
   }
 }

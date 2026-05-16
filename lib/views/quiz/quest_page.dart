@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:mahasiswa_sukses/views/widgets/restore_streak_dialog.dart';
 import '../../viewmodels/quest_viewmodel.dart';
 import '../widgets/header_background.dart';
 import 'quest_card.dart';
@@ -175,6 +175,9 @@ class _QuestPageState extends State<QuestPage> {
                         children: [
                           _StreakSection(
                             streak: vm.currentStreak,
+                            isBroken: vm.hasLoadedSummary &&
+                                !vm.isSummaryLoading &&
+                                vm.summary.currentStreak == 0,
                           ),
                           const SizedBox(height: 13),
                           Padding(
@@ -322,16 +325,27 @@ class _HeaderQuestTabButton extends StatelessWidget {
 
 class _StreakSection extends StatelessWidget {
   final int streak;
+  final bool isBroken;
 
   const _StreakSection({
     required this.streak,
+    required this.isBroken,
   });
 
   @override
   Widget build(BuildContext context) {
+    final iconColor =
+        isBroken ? const Color(0xFF9E9E9E) : const Color(0xFFFF6813);
+
+    final title = isBroken ? 'Streak Kamu Padam!' : 'Streak Kamu';
+
+    final subtitle = isBroken
+        ? 'Yuk pulihkan streak harianmu'
+        : '$streak hari berturut-turut';
+
     return Container(
       height: 96,
-      padding: const EdgeInsets.fromLTRB(42, 0, 42, 0),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -347,7 +361,7 @@ class _StreakSection extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFFF6813),
+              color: iconColor,
               borderRadius: BorderRadius.circular(5),
             ),
             child: const Icon(
@@ -363,17 +377,19 @@ class _StreakSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Streak Kamu',
-                  style: TextStyle(
+                  title,
+                  style: const TextStyle(
                     color: Color(0xFFED1E28),
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
                 Text(
-                  '$streak hari berturut-turut',
-                  style: TextStyle(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
                     color: Color(0xFFED1E28),
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
@@ -382,14 +398,42 @@ class _StreakSection extends StatelessWidget {
               ],
             ),
           ),
-          const Text(
-            'Teruskan!',
-            style: TextStyle(
-              color: Color(0xFFED1E28),
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
+          if (isBroken)
+            SizedBox(
+              width: 96,
+              height: 34,
+              child: OutlinedButton(
+                onPressed: () {
+                  showRestoreStreakDialog(context);
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFED1E28),
+                  side: const BorderSide(
+                    color: Color(0xFFED1E28),
+                  ),
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Pulihkan!',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            )
+          else
+            const Text(
+              'Teruskan!',
+              style: TextStyle(
+                color: Color(0xFFED1E28),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          ),
         ],
       ),
     );
