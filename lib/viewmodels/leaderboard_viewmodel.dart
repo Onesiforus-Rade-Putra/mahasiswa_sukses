@@ -32,10 +32,14 @@ class LeaderboardViewModel extends ChangeNotifier {
 
       userRank = result.userRank;
       userTotalXp = result.userTotalXp;
-      topGlobal = result.topGlobal;
-      topFriends = result.topFriends;
+
+      topGlobal = _normalizeLeaderboard(result.topGlobal).take(50).toList();
+      topFriends = _normalizeLeaderboard(result.topFriends);
+
+      debugPrint('TOP GLOBAL COUNT: ${topGlobal.length}');
+      debugPrint('TOP FRIENDS COUNT: ${topFriends.length}');
     } catch (e) {
-      errorMessage = e.toString();
+      errorMessage = e.toString().replaceFirst('Exception: ', '');
     }
 
     isLoading = false;
@@ -48,72 +52,46 @@ class LeaderboardViewModel extends ChangeNotifier {
   }
 
   List<LeaderboardModel> get currentLeaderboardList {
-    if (selectedTab == LeaderboardTab.teman) {
-      return topFriends;
-    }
-
-    return topGlobal;
+    return selectedTab == LeaderboardTab.teman ? topFriends : topGlobal;
   }
 
   List<LeaderboardModel> get currentTopPerformers {
-    final source = currentLeaderboardList;
-
-    if (source.length >= 3) {
-      return source.take(3).toList();
-    }
-
-    return _fallbackTopPerformers;
+    return currentLeaderboardList.take(3).toList();
   }
 
-  List<LeaderboardModel> get _fallbackTopPerformers {
-    return [
-      LeaderboardModel(
-        rank: 2,
-        name: 'Budi Santoso',
-        initials: 'BS',
-        point: 2450,
-        level: 12,
-      ),
-      LeaderboardModel(
-        rank: 1,
-        name: 'Andi Pratama',
-        initials: 'AP',
-        point: 3000,
-        level: 12,
-      ),
-      LeaderboardModel(
-        rank: 3,
-        name: 'Muhammad Arifin',
-        initials: 'MA',
-        point: 2300,
-        level: 9,
-      ),
-    ];
+  bool get hasLeaderboardData {
+    return currentLeaderboardList.isNotEmpty;
   }
 
-  List<LeaderboardModel> get fallbackLeaderboardList {
-    return [
-      LeaderboardModel(
-        rank: 1,
-        name: 'Budi Santoso',
-        initials: 'BS',
-        point: 2450,
-        level: 12,
-      ),
-      LeaderboardModel(
-        rank: 2,
-        name: 'Zabrina Virgie',
-        initials: 'AP',
-        point: 3000,
-        level: 12,
-      ),
-      LeaderboardModel(
-        rank: 3,
-        name: 'Muhammad Arifin Ilham',
-        initials: 'MA',
-        point: 2300,
-        level: 9,
-      ),
-    ];
+  bool get hasEnoughTopPerformers {
+    return currentTopPerformers.length >= 3;
+  }
+
+  List<LeaderboardModel> _normalizeLeaderboard(
+    List<LeaderboardModel> source,
+  ) {
+    final sorted = [...source];
+
+    sorted.sort((a, b) {
+      final pointCompare = b.point.compareTo(a.point);
+
+      if (pointCompare != 0) {
+        return pointCompare;
+      }
+
+      return a.name.compareTo(b.name);
+    });
+
+    return List.generate(sorted.length, (index) {
+      final item = sorted[index];
+
+      return LeaderboardModel(
+        rank: index + 1,
+        name: item.name,
+        initials: item.initials,
+        point: item.point,
+        level: item.level,
+      );
+    });
   }
 }

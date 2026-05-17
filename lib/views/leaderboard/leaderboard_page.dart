@@ -24,6 +24,8 @@ class _LeaderboardView extends StatelessWidget {
     final viewModel = context.watch<LeaderboardViewModel>();
     final isFriendTab = viewModel.selectedTab == LeaderboardTab.teman;
 
+    const double headerHeight = 220;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F4F4),
       body: Stack(
@@ -31,7 +33,7 @@ class _LeaderboardView extends StatelessWidget {
           Column(
             children: [
               Container(
-                height: 200,
+                height: headerHeight,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -55,7 +57,7 @@ class _LeaderboardView extends StatelessWidget {
           // HEADER FIXED / TIDAK IKUT SCROLL
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 38, 28, 0),
+              padding: const EdgeInsets.fromLTRB(28, 48, 28, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -65,62 +67,57 @@ class _LeaderboardView extends StatelessWidget {
                       viewModel.changeTab(LeaderboardTab.top50);
                     },
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 34),
                   _LeaderboardTabs(viewModel: viewModel),
                 ],
               ),
             ),
           ),
 
-          // CONTENT YANG BOLEH SCROLL
           Positioned.fill(
-            top: 200,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 125),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (viewModel.isLoading)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 80),
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFED1E28),
+            top: headerHeight,
+            child: viewModel.isLoading
+                ? const _LeaderboardLoadingView()
+                : viewModel.errorMessage != null
+                    ? _LeaderboardErrorView(
+                        message: viewModel.errorMessage!,
+                        onRetry: () {
+                          context
+                              .read<LeaderboardViewModel>()
+                              .loadLeaderboard();
+                        },
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
+                        child: Column(
+                          children: [
+                            if (viewModel.hasEnoughTopPerformers)
+                              _TopPerformersCard(
+                                performers: viewModel.currentTopPerformers,
+                              )
+                            else
+                              const _LeaderboardEmptyCard(
+                                title: 'Belum Ada Top Performers',
+                                message:
+                                    'Data peringkat belum cukup untuk menampilkan podium.',
+                              ),
+                            const SizedBox(height: 18),
+                            if (viewModel.hasLeaderboardData)
+                              ...viewModel.currentLeaderboardList.map(
+                                (item) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _RankingItemCard(item: item),
+                                ),
+                              )
+                            else
+                              const _LeaderboardEmptyCard(
+                                title: 'Belum Ada Data',
+                                message:
+                                    'Leaderboard masih kosong untuk kategori ini.',
+                              ),
+                          ],
                         ),
                       ),
-                    )
-                  else if (viewModel.errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 80),
-                      child: Center(
-                        child: Text(
-                          viewModel.errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFFED1E28),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    )
-                  else ...[
-                    _TopPerformersCard(
-                      performers: viewModel.currentTopPerformers,
-                    ),
-                    const SizedBox(height: 16),
-                    const _SectionTitle(),
-                    const SizedBox(height: 18),
-                    ...viewModel.currentLeaderboardList.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: _RankingItemCard(item: item),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -211,11 +208,11 @@ class _LeaderboardTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.all(5),
+      height: 50,
+      padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Colors.white,
           width: 1,
@@ -265,7 +262,7 @@ class _TabButton extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         alignment: Alignment.center,
@@ -278,7 +275,7 @@ class _TabButton extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 12,
+              size: 13,
               color: isActive ? activeColor : Colors.white,
             ),
             const SizedBox(width: 8),
@@ -286,7 +283,7 @@ class _TabButton extends StatelessWidget {
               title,
               style: TextStyle(
                 color: isActive ? activeColor : Colors.white,
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -306,14 +303,25 @@ class _TopPerformersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final second = performers[0];
-    final first = performers[1];
-    final third = performers[2];
+    final first = performers.firstWhere(
+      (item) => item.rank == 1,
+      orElse: () => performers[0],
+    );
+
+    final second = performers.firstWhere(
+      (item) => item.rank == 2,
+      orElse: () => performers[1],
+    );
+
+    final third = performers.firstWhere(
+      (item) => item.rank == 3,
+      orElse: () => performers[2],
+    );
 
     return Container(
       width: double.infinity,
-      height: 260,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      height: 310,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF0F1),
         borderRadius: BorderRadius.circular(7),
@@ -328,7 +336,7 @@ class _TopPerformersCard extends StatelessWidget {
             'Top Performers',
             style: TextStyle(
               color: Color(0xFF222222),
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -337,11 +345,11 @@ class _TopPerformersCard extends StatelessWidget {
             'Mahasiswa terbaik minggu ini',
             style: TextStyle(
               color: Color(0xFF555555),
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 22),
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -349,8 +357,8 @@ class _TopPerformersCard extends StatelessWidget {
                 Expanded(
                   child: _PodiumItem(
                     item: second,
-                    avatarSize: 48,
-                    barHeight: 50,
+                    avatarSize: 56,
+                    barHeight: 62,
                     barColor: const Color(0xFFC9C9C9),
                     showMedal: true,
                   ),
@@ -358,8 +366,8 @@ class _TopPerformersCard extends StatelessWidget {
                 Expanded(
                   child: _PodiumItem(
                     item: first,
-                    avatarSize: 52,
-                    barHeight: 70,
+                    avatarSize: 64,
+                    barHeight: 104,
                     barColor: const Color(0xFFFFC236),
                     showCrown: true,
                   ),
@@ -367,8 +375,8 @@ class _TopPerformersCard extends StatelessWidget {
                 Expanded(
                   child: _PodiumItem(
                     item: third,
-                    avatarSize: 48,
-                    barHeight: 28,
+                    avatarSize: 56,
+                    barHeight: 42,
                     barColor: const Color(0xFFD1924D),
                     showMedal: true,
                   ),
@@ -419,7 +427,7 @@ class _PodiumItem extends StatelessWidget {
                 item.initials,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 19,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -454,7 +462,7 @@ class _PodiumItem extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           item.name,
           textAlign: TextAlign.center,
@@ -469,8 +477,8 @@ class _PodiumItem extends StatelessWidget {
         const SizedBox(height: 5),
         Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 3,
+            horizontal: 9,
+            vertical: 4,
           ),
           decoration: BoxDecoration(
             color: const Color(0xFFFFE6E8),
@@ -489,7 +497,7 @@ class _PodiumItem extends StatelessWidget {
                 '${item.point}',
                 style: const TextStyle(
                   color: Color(0xFF333333),
-                  fontSize: 8,
+                  fontSize: 9,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -550,50 +558,57 @@ class _RankingItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 58,
+      height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: const Color(0xFFED1E28),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            height: 28,
-            width: 28,
+            height: 34,
+            width: 34,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               '#${item.rank}',
               style: const TextStyle(
                 color: Color(0xFFED1E28),
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Container(
-            height: 28,
-            width: 28,
+            height: 36,
+            width: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: const Color(0xFFFFF0F1),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(9),
             ),
             child: Text(
               item.initials,
               style: const TextStyle(
                 color: Color(0xFFED1E28),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -605,29 +620,29 @@ class _RankingItemCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   '${item.point} Poin',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
           Container(
-            height: 28,
-            width: 28,
+            height: 36,
+            width: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(9),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -636,22 +651,181 @@ class _RankingItemCard extends StatelessWidget {
                   '${item.level}',
                   style: const TextStyle(
                     color: Color(0xFFED1E28),
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
+                    height: 1,
                   ),
                 ),
+                const SizedBox(height: 2),
                 const Text(
                   'Level',
                   style: TextStyle(
                     color: Color(0xFFED1E28),
                     fontSize: 7,
                     fontWeight: FontWeight.w600,
+                    height: 1,
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LeaderboardEmptyCard extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const _LeaderboardEmptyCard({
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.emoji_events_outlined,
+            color: Color(0xFFED1E28),
+            size: 34,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF111827),
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LeaderboardLoadingView extends StatelessWidget {
+  const _LeaderboardLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: Color(0xFFED1E28),
+      ),
+    );
+  }
+}
+
+class _LeaderboardErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _LeaderboardErrorView({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFED1E28),
+                size: 36,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Gagal Memuat Leaderboard',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF111827),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 38,
+                child: ElevatedButton(
+                  onPressed: onRetry,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFED1E28),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Coba Lagi',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
