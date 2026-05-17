@@ -202,7 +202,23 @@ class ProfileViewModel extends ChangeNotifier {
 
   int get nextLevel => level + 1;
 
+  int get currentLevelXp {
+    final fromBackend = achievementData?.summary.currentLevelXp ?? 0;
+
+    if (fromBackend > 0) {
+      return fromBackend;
+    }
+
+    return totalXp;
+  }
+
   int get nextLevelTarget {
+    final fromBackend = achievementData?.summary.targetPoint ?? 0;
+
+    if (fromBackend > 0) {
+      return fromBackend;
+    }
+
     if (totalXp <= 0) return 1000;
 
     final nextTarget = ((totalXp ~/ 1000) + 1) * 1000;
@@ -213,11 +229,17 @@ class ProfileViewModel extends ChangeNotifier {
   double get levelProgress {
     if (nextLevelTarget <= 0) return 0;
 
-    return (totalXp / nextLevelTarget).clamp(0.0, 1.0);
+    return (currentLevelXp / nextLevelTarget).clamp(0.0, 1.0);
   }
 
   int get remainingXp {
-    final remaining = nextLevelTarget - totalXp;
+    final fromBackend = achievementData?.summary.nextLevelRequiredXpDiff ?? 0;
+
+    if (fromBackend > 0) {
+      return fromBackend;
+    }
+
+    final remaining = nextLevelTarget - currentLevelXp;
 
     return remaining < 0 ? 0 : remaining;
   }

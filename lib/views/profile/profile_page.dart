@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mahasiswa_sukses/views/profile/edit_profile_page.dart';
-
+import '../../services/profile_service.dart';
 import '../../models/achievement_model.dart';
 import '../../models/friend_model.dart';
 import '../../viewmodels/profile_viewmodel.dart';
@@ -15,6 +15,8 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final ProfileViewModel vm = ProfileViewModel();
+
+  int _avatarCacheKey = DateTime.now().millisecondsSinceEpoch;
 
   static const Color primaryRed = Color(0xFFED0711);
   static const Color darkRed = Color(0xFF9B0D17);
@@ -48,197 +50,140 @@ class _ProfilePageState extends State<ProfilePage> {
     return '${(value * 100).round()}%';
   }
 
+  String _profileInitials() {
+    final source = _profileNameText();
+
+    final cleaned = source.replaceAll('_', ' ').replaceAll('-', ' ').trim();
+
+    final parts =
+        cleaned.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+
+    if (parts.isEmpty) return 'U';
+
+    if (parts.length == 1) {
+      final text = parts.first;
+      if (text.length == 1) {
+        return text[0].toUpperCase();
+      }
+
+      return text.substring(0, 2).toUpperCase();
+    }
+
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  String _profileDescriptionText() {
+    final text = vm.description.trim();
+
+    if (text.isEmpty || text == '-') {
+      return 'Passionate learner yang suka tantangan baru dan terus berkembang!';
+    }
+
+    return text;
+  }
+
+  String _profileNameText() {
+    final displayName = vm.profile?.displayName.trim() ?? '';
+
+    if (displayName.isNotEmpty && displayName != '-') {
+      return displayName;
+    }
+
+    final username = vm.username.trim();
+
+    if (username.isNotEmpty && username != '-') {
+      return username;
+    }
+
+    return 'User';
+  }
+
+  String? _profileAvatarUrl() {
+    final userId = vm.profile?.id.trim() ?? '';
+
+    if (userId.isEmpty) {
+      return null;
+    }
+
+    return ProfileService().buildAvatarUrl(
+      userId,
+      cacheKey: _avatarCacheKey,
+    );
+  }
+
+  Widget _buildProfileAvatar() {
+    final avatarUrl = _profileAvatarUrl();
+
+    Widget fallbackAvatar() {
+      return Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFF2D4D),
+              Color(0xFFED0711),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(13),
+          boxShadow: [
+            BoxShadow(
+              color: primaryRed.withOpacity(0.26),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            _profileInitials(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (avatarUrl == null) {
+      return fallbackAvatar();
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(13),
+      child: Image.network(
+        avatarUrl,
+        width: 64,
+        height: 64,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return fallbackAvatar();
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+
+          return fallbackAvatar();
+        },
+      ),
+    );
+  }
+
   Future<void> _showAddFriendDialog() async {
-    final controller = TextEditingController();
-
-    bool isSending = false;
-    String? errorText;
-
     final success = await showDialog<bool>(
       context: context,
-      barrierDismissible: !isSending,
+      barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.25),
-      useRootNavigator: true,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            Future<void> submitFriendRequest() async {
-              final username = controller.text.trim();
-
-              setDialogState(() {
-                errorText = null;
-              });
-
-              if (username.isEmpty) {
-                setDialogState(() {
-                  errorText = 'Username wajib diisi';
-                });
-                return;
-              }
-
-              if (username.length < 3) {
-                setDialogState(() {
-                  errorText = 'Username minimal 3 karakter';
-                });
-                return;
-              }
-
-              setDialogState(() {
-                isSending = true;
-              });
-
-              final error = await vm.sendFriendRequestForDialog(username);
-
-              if (!dialogContext.mounted) return;
-
-              if (error != null) {
-                setDialogState(() {
-                  isSending = false;
-                  errorText = error;
-                });
-                return;
-              }
-
-              Navigator.of(dialogContext, rootNavigator: true).pop(true);
-            }
-
-            return Dialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-              backgroundColor: Colors.transparent,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Tambah Teman Baru',
-                            style: TextStyle(
-                              color: Color(0xFF111827),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: isSending
-                              ? null
-                              : () {
-                                  Navigator.of(
-                                    dialogContext,
-                                    rootNavigator: true,
-                                  ).pop(false);
-                                },
-                          child: const Icon(
-                            Icons.close_rounded,
-                            size: 22,
-                            color: Color(0xFF111827),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 17),
-                    const Text(
-                      'Username',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 29,
-                      child: TextField(
-                        controller: controller,
-                        enabled: !isSending,
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) {
-                          if (!isSending) {
-                            submitFriendRequest();
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan Username',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF6B7280),
-                            fontSize: 12,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFE5E7EB),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 0,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(3),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (errorText != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        errorText!,
-                        style: const TextStyle(
-                          color: Color(0xFFED0711),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: isSending ? null : submitFriendRequest,
-                        style: ElevatedButton.styleFrom(
-                          elevation: 0,
-                          backgroundColor: primaryRed,
-                          disabledBackgroundColor: primaryRed.withOpacity(0.65),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        child: isSending
-                            ? const SizedBox(
-                                width: 17,
-                                height: 17,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Kirim Friend Request',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+      builder: (_) {
+        return _AddFriendDialog(
+          vm: vm,
+          primaryRed: primaryRed,
         );
       },
     );
-
-    controller.dispose();
 
     if (!mounted) return;
 
@@ -306,17 +251,24 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: const Icon(
-              Icons.person_outline_rounded,
-              color: Colors.white,
-              size: 25,
+          GestureDetector(
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(
+                Icons.person_outline_rounded,
+                color: Colors.white,
+                size: 25,
+              ),
             ),
           ),
         ],
@@ -345,42 +297,11 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Row(
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFFFF2D4D),
-                      Color(0xFFED0711),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(13),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryRed.withOpacity(0.26),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'JD',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
+              _buildProfileAvatar(),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  vm.username,
+                  _profileNameText(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -410,8 +331,11 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                             ),
                           );
-
                           if (result == true) {
+                            setState(() {
+                              _avatarCacheKey =
+                                  DateTime.now().millisecondsSinceEpoch;
+                            });
                             await vm.refresh();
                           }
                         },
@@ -428,7 +352,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              vm.description,
+              _profileDescriptionText(),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -565,7 +489,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               Text(
-                '${vm.totalXp}/${vm.nextLevelTarget} XP',
+                '${vm.currentLevelXp}/${vm.nextLevelTarget} XP',
                 style: const TextStyle(
                   color: primaryRed,
                   fontSize: 14,
@@ -608,6 +532,9 @@ class _ProfilePageState extends State<ProfilePage> {
     String? actionText,
     VoidCallback? onAction,
   }) {
+    final bool isAddButton =
+        actionText != null && actionText.toLowerCase().contains('tambah');
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
@@ -625,14 +552,33 @@ class _ProfilePageState extends State<ProfilePage> {
           if (actionText != null)
             GestureDetector(
               onTap: onAction,
-              child: Text(
-                actionText,
-                style: const TextStyle(
-                  color: primaryRed,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              child: isAddButton
+                  ? Container(
+                      height: 30,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: primaryRed,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          actionText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Text(
+                      actionText,
+                      style: const TextStyle(
+                        color: primaryRed,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
             ),
         ],
       ),
@@ -731,44 +677,80 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildAchievementGrid() {
-    final badges = vm.achievementData?.badges ?? [];
+    final badges = [...(vm.achievementData?.badges ?? [])];
 
-    final emojis = badges.isNotEmpty
-        ? badges.take(8).map(_achievementEmoji).toList()
-        : ['🎯', '💬', '⭐', '🏆', '🌟', '⚡', '📚', '💎'];
+    badges.sort((a, b) {
+      if (a.isCompleted != b.isCompleted) {
+        return a.isCompleted ? -1 : 1;
+      }
 
-    while (emojis.length < 8) {
-      emojis.add('⭐');
+      return b.progress.compareTo(a.progress);
+    });
+
+    if (badges.isEmpty) {
+      final fallbackEmojis = ['🎯', '💬', '⭐', '🏆', '🌟', '⚡', '📚', '💎'];
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: fallbackEmojis.map((emoji) {
+            return _achievementIconBox(
+              emoji: emoji,
+              isCompleted: true,
+            );
+          }).toList(),
+        ),
+      );
     }
+
+    final visibleBadges = badges.take(8).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
-        children: emojis.take(8).map((emoji) {
-          return Container(
-            width: 78,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(11),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 9,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                emoji,
-                style: const TextStyle(fontSize: 24),
-              ),
+        children: visibleBadges.map((badge) {
+          return Tooltip(
+            message: badge.title,
+            child: _achievementIconBox(
+              emoji: _achievementEmoji(badge),
+              isCompleted: badge.isCompleted,
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _achievementIconBox({
+    required String emoji,
+    required bool isCompleted,
+  }) {
+    return Opacity(
+      opacity: isCompleted ? 1 : 0.45,
+      child: Container(
+        width: 78,
+        height: 58,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(11),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 9,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            emoji,
+            style: const TextStyle(fontSize: 24),
+          ),
+        ),
       ),
     );
   }
@@ -1080,7 +1062,7 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 18),
         _sectionTitle(
           title: 'Teman (${vm.friendCount})',
-          actionText: '⚭ Tambah',
+          actionText: '+ Tambah',
           onAction: _showAddFriendDialog,
         ),
         const SizedBox(height: 14),
@@ -1098,7 +1080,13 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: pageBg,
       body: RefreshIndicator(
-        onRefresh: vm.refresh,
+        onRefresh: () async {
+          setState(() {
+            _avatarCacheKey = DateTime.now().millisecondsSinceEpoch;
+          });
+
+          await vm.refresh();
+        },
         color: primaryRed,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -1108,6 +1096,214 @@ class _ProfilePageState extends State<ProfilePage> {
               Padding(
                 padding: const EdgeInsets.only(top: 138),
                 child: _buildContent(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddFriendDialog extends StatefulWidget {
+  final ProfileViewModel vm;
+  final Color primaryRed;
+
+  const _AddFriendDialog({
+    required this.vm,
+    required this.primaryRed,
+  });
+
+  @override
+  State<_AddFriendDialog> createState() => _AddFriendDialogState();
+}
+
+class _AddFriendDialogState extends State<_AddFriendDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  bool isSending = false;
+  String? errorText;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitFriendRequest() async {
+    final username = _controller.text.trim();
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      errorText = null;
+    });
+
+    if (username.isEmpty) {
+      setState(() {
+        errorText = 'Username wajib diisi';
+      });
+      return;
+    }
+
+    if (username.length < 3) {
+      setState(() {
+        errorText = 'Username minimal 3 karakter';
+      });
+      return;
+    }
+
+    setState(() {
+      isSending = true;
+    });
+
+    final error = await widget.vm.sendFriendRequestForDialog(username);
+
+    if (!mounted) return;
+
+    if (error != null) {
+      setState(() {
+        isSending = false;
+        errorText = error;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(true);
+  }
+
+  void _closeDialog() {
+    FocusScope.of(context).unfocus();
+    Navigator.of(context).pop(false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        FocusScope.of(context).unfocus();
+        return !isSending;
+      },
+      child: Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Tambah Teman Baru',
+                      style: TextStyle(
+                        color: Color(0xFF111827),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: isSending ? null : _closeDialog,
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 22,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 17),
+              const Text(
+                'Username',
+                style: TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 29,
+                child: TextField(
+                  controller: _controller,
+                  enabled: !isSending,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    if (!isSending) {
+                      _submitFriendRequest();
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Masukkan Username',
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFE5E7EB),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 0,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(3),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              if (errorText != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  errorText!,
+                  style: const TextStyle(
+                    color: Color(0xFFED0711),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: isSending ? null : _submitFriendRequest,
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: widget.primaryRed,
+                    disabledBackgroundColor:
+                        widget.primaryRed.withOpacity(0.65),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  child: isSending
+                      ? const SizedBox(
+                          width: 17,
+                          height: 17,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Kirim Friend Request',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
               ),
             ],
           ),

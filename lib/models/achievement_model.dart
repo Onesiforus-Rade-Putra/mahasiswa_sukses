@@ -3,6 +3,8 @@ class AchievementSummaryModel {
   final int totalAchievement;
   final int currentPoint;
   final int targetPoint;
+  final int currentLevelXp;
+  final int nextLevelRequiredXpDiff;
   final double progressPercent;
 
   final int totalQuest;
@@ -16,6 +18,8 @@ class AchievementSummaryModel {
     required this.totalAchievement,
     required this.currentPoint,
     required this.targetPoint,
+    required this.currentLevelXp,
+    required this.nextLevelRequiredXpDiff,
     required this.progressPercent,
     required this.totalQuest,
     required this.totalQuestCompleted,
@@ -36,11 +40,19 @@ class AchievementSummaryModel {
             ? safeTotalAchievement
             : achieved;
 
+    final currentLevelXp = _intValue(json['current_level_xp']);
+    final nextLevelRequiredXpDiff =
+        _intValue(json['next_level_required_xp_diff']);
+
+    final targetPoint = currentLevelXp + nextLevelRequiredXpDiff;
+
     return AchievementSummaryModel(
       achieved: safeAchieved,
       totalAchievement: safeTotalAchievement,
       currentPoint: _intValue(json['total_xp_earned']),
-      targetPoint: 1000,
+      targetPoint: targetPoint > 0 ? targetPoint : 1000,
+      currentLevelXp: currentLevelXp,
+      nextLevelRequiredXpDiff: nextLevelRequiredXpDiff,
       progressPercent:
           safeTotalAchievement == 0 ? 0 : safeAchieved / safeTotalAchievement,
       totalQuest: _intValue(json['total_quest']),

@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/user_profile_model.dart';
 import '../../services/profile_service.dart';
 
@@ -17,6 +19,11 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final ProfileService profileService = ProfileService();
+  final ImagePicker _picker = ImagePicker();
+
+  File? _selectedAvatarFile;
+  bool isUploadingAvatar = false;
+  bool hasAvatarChanged = false;
 
   late final TextEditingController usernameController;
   late final TextEditingController emailController;
@@ -61,6 +68,72 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
+  bool _isAllowedImageFile(String path) {
+    final lowerPath = path.toLowerCase();
+
+    return lowerPath.endsWith('.jpg') ||
+        lowerPath.endsWith('.jpeg') ||
+        lowerPath.endsWith('.png');
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    if (isLoading || isUploadingAvatar) {
+      return;
+    }
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1024,
+      );
+
+      if (pickedFile == null) {
+        return;
+      }
+
+      if (!_isAllowedImageFile(pickedFile.path)) {
+        _showMessage('Format foto harus JPG, JPEG, atau PNG');
+        return;
+      }
+
+      final file = File(pickedFile.path);
+
+      setState(() {
+        _selectedAvatarFile = file;
+        isUploadingAvatar = true;
+      });
+
+      await profileService.uploadAvatar(file);
+
+      if (!mounted) return;
+
+      setState(() {
+        isUploadingAvatar = false;
+        hasAvatarChanged = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto profile berhasil diperbarui'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isUploadingAvatar = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
+    }
+  }
+
   String _initials(String name) {
     final cleanName = name.trim();
 
@@ -73,6 +146,98 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
 
     return cleanName.substring(0, 1).toUpperCase();
+  }
+
+  String? _avatarUrl() {
+    final userId = widget.profile.id.trim();
+
+    if (userId.isEmpty) {
+      return null;
+    }
+
+    return profileService.buildAvatarUrl(userId);
+  }
+
+  Widget _profileAvatar() {
+    final avatarUrl = _avatarUrl();
+
+    Widget fallbackAvatar() {
+      return Container(
+        width: 74,
+        height: 74,
+        decoration: const BoxDecoration(
+          color: Color(0xFF0B6B4E),
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Text(
+            _initials(widget.profile.displayName),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget avatarContent;
+
+    if (_selectedAvatarFile != null) {
+      avatarContent = ClipOval(
+        child: Image.file(
+          _selectedAvatarFile!,
+          width: 74,
+          height: 74,
+          fit: BoxFit.cover,
+        ),
+      );
+    } else if (avatarUrl != null) {
+      avatarContent = ClipOval(
+        child: Image.network(
+          avatarUrl,
+          width: 74,
+          height: 74,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) {
+            return fallbackAvatar();
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return fallbackAvatar();
+          },
+        ),
+      );
+    } else {
+      avatarContent = fallbackAvatar();
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        avatarContent,
+        if (isUploadingAvatar)
+          Container(
+            width: 74,
+            height: 74,
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.35),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   InputDecoration _inputDecoration({
@@ -150,6 +315,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _handleSave() async {
+    if (isUploadingAvatar) {
+      _showMessage('Tunggu upload foto selesai');
+      return;
+    }
     final username = usernameController.text.trim();
     final email = emailController.text.trim();
     final description = descriptionController.text.trim();
@@ -234,7 +403,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Align(
             alignment: Alignment.centerLeft,
             child: GestureDetector(
-              onTap: () => Navigator.pop(context),
+              onTap: () => Navigator.pop(context, hasAvatarChanged),
               child: Container(
                 width: 33,
                 height: 33,
@@ -273,53 +442,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
       child: Column(
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 74,
-                height: 74,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0B6B4E),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    _initials(widget.profile.displayName),
-                    style: const TextStyle(
+          GestureDetector(
+            onTap: isUploadingAvatar ? null : _pickAndUploadAvatar,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _profileAvatar(),
+                Positioned(
+                  right: -2,
+                  bottom: 6,
+                  child: Container(
+                    width: 19,
+                    height: 19,
+                    decoration: const BoxDecoration(
+                      color: primaryRed,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
                       color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
+                      size: 11,
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                right: -2,
-                bottom: 6,
-                child: Container(
-                  width: 19,
-                  height: 19,
-                  decoration: const BoxDecoration(
-                    color: primaryRed,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt_rounded,
-                    color: Colors.white,
-                    size: 11,
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Ganti Foto Profil',
-            style: TextStyle(
-              color: textGrey,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+          GestureDetector(
+            onTap: isUploadingAvatar ? null : _pickAndUploadAvatar,
+            child: Text(
+              isUploadingAvatar ? 'Mengupload...' : 'Ganti Foto Profil',
+              style: const TextStyle(
+                color: textGrey,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -380,22 +538,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _formField(
             label: 'Konfirmasi password',
             controller: confirmPasswordController,
-            obscureText: obscureConfirmPassword,
-            suffixIcon: IconButton(
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                setState(() {
-                  obscureConfirmPassword = !obscureConfirmPassword;
-                });
-              },
-              icon: Icon(
-                obscureConfirmPassword
-                    ? Icons.visibility_off_rounded
-                    : Icons.visibility_rounded,
-                size: 18,
-                color: textDark,
-              ),
-            ),
+            obscureText: true,
           ),
           const SizedBox(height: 36),
           Align(
@@ -404,7 +547,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
               width: 80,
               height: 31,
               child: ElevatedButton(
-                onPressed: isLoading ? null : _handleSave,
+                onPressed:
+                    (isLoading || isUploadingAvatar) ? null : _handleSave,
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
                   backgroundColor: primaryRed,
@@ -423,9 +567,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Simpan',
-                        style: TextStyle(
+                    : Text(
+                        isUploadingAvatar ? '...' : 'Simpan',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -440,16 +584,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: pageBg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildAvatarSection(),
-            _buildFormCard(),
-            const SizedBox(height: 40),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+
+        Navigator.pop(context, hasAvatarChanged);
+      },
+      child: Scaffold(
+        backgroundColor: pageBg,
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildAvatarSection(),
+              _buildFormCard(),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );

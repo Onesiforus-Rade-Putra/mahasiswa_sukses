@@ -1,6 +1,7 @@
 import 'dart:convert';
-
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mahasiswa_sukses/models/friend_model.dart';
@@ -13,10 +14,14 @@ class ProfileService {
   static const String profilePath = '/api/v1/user/profile';
   static const String avatarPath = '/api/v1/user/avatar';
 
-  static const String friendListPath = '/friends/';
-  static const String friendSummaryPath = '/friends/summary';
-  static const String friendRequestPath = '/friends/request';
-  static const String friendRequestListPath = '/friends/request_list';
+  static const String friendListPath = '/api/v1/friends/';
+  static const String friendSummaryPath = '/api/v1/friends/summary';
+  static const String friendRequestPath = '/api/v1/friends/request';
+  static const String friendRequestListPath = '/api/v1/friends/request_list';
+
+  static const String acceptFriendPath = '/api/v1/friends/accept';
+  static const String denyFriendPath = '/api/v1/friends/deny';
+  static const String removeFriendPath = '/api/v1/friends';
   static const String updateProfilePath = '/api/v1/user/profile';
   static const String updatePasswordPath = '/api/v1/auth/update-password';
 
@@ -157,8 +162,74 @@ class ProfileService {
     throw Exception(_errorMessage(response, 'Gagal mengambil profile'));
   }
 
-  String buildAvatarUrl(String userId) {
-    return '$baseUrl$avatarPath/$userId';
+  String buildAvatarUrl(String userId, {Object? cacheKey}) {
+    final url = '$baseUrl$avatarPath/$userId';
+
+    if (cacheKey == null) {
+      return url;
+    }
+
+    return '$url?v=$cacheKey';
+  }
+
+  MediaType? _getImageMediaType(String path) {
+    final lowerPath = path.toLowerCase();
+
+    if (lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')) {
+      return MediaType('image', 'jpeg');
+    }
+
+    if (lowerPath.endsWith('.png')) {
+      return MediaType('image', 'png');
+    }
+
+    return null;
+  }
+
+  Future<void> uploadAvatar(File file) async {
+    final token = await _getToken();
+
+    final mediaType = _getImageMediaType(file.path);
+
+    if (mediaType == null) {
+      throw Exception('Format foto harus JPG, JPEG, atau PNG');
+    }
+
+    final authValue =
+        token.toLowerCase().startsWith('bearer ') ? token : 'Bearer $token';
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/v1/user/profile/avatar'),
+    );
+
+    request.headers.addAll({
+      'Accept': 'application/json',
+      'Authorization': authValue,
+    });
+
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: mediaType,
+      ),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    debugPrint('UPLOAD AVATAR STATUS: ${response.statusCode}');
+    debugPrint('UPLOAD AVATAR BODY: ${response.body}');
+    debugPrint('UPLOAD AVATAR CONTENT TYPE: $mediaType');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return;
+    }
+
+    throw Exception(
+      _errorMessage(response, 'Gagal upload foto profile'),
+    );
   }
 
   Future<FriendSummaryModel> getFriendSummary() async {
@@ -245,7 +316,7 @@ class ProfileService {
     final token = await _getToken();
 
     final response = await http.post(
-      Uri.parse('$baseUrl/friends/accept/$requesterId'),
+      Uri.parse('$baseUrl$acceptFriendPath/$requesterId'),
       headers: _headers(token),
     );
 
@@ -260,7 +331,7 @@ class ProfileService {
     final token = await _getToken();
 
     final response = await http.post(
-      Uri.parse('$baseUrl/friends/deny/$requesterId'),
+      Uri.parse('$baseUrl$denyFriendPath/$requesterId'),
       headers: _headers(token),
     );
 
@@ -275,7 +346,7 @@ class ProfileService {
     final token = await _getToken();
 
     final response = await http.delete(
-      Uri.parse('$baseUrl/friends/$friendId'),
+      Uri.parse('$baseUrl$removeFriendPath/$friendId'),
       headers: _headers(token),
     );
 
@@ -319,7 +390,10 @@ class ProfileService {
   }) async {
     final token = await _getToken();
 
-    final cleanToken = token.replaceFirst('Bearer ', '');
+    final cleanToken = token.replaceFirst(
+      RegExp(r'^Bearer\s+', caseSensitive: false),
+      '',
+    );
 
     final response = await http.post(
       Uri.parse('$baseUrl$updatePasswordPath'),
